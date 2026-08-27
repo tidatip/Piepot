@@ -269,6 +269,7 @@
   .amount { width: 100%; font-size: 34px; font-weight: 600; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); text-align: right; }
   .cur { display: grid; grid-auto-rows: 1fr; gap: 4px; }
   .cur button { padding: 0 12px; min-width: 60px; border-radius: 10px; border: 1px solid var(--line); font-weight: 600; font-size: 13px; color: var(--muted); background: var(--surface); }
+  #fPlus { font-size: 18px; line-height: 1; color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); min-height: 34px; }
   .cur button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   .conv { font-size: 13px; color: var(--muted); text-align: right; margin-top: 6px; min-height: 1.2em; }
   .txt { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 16px; }
@@ -422,8 +423,8 @@
   <div class="field">
     <label data-i="amount"></label>
     <div class="amount-wrap">
-      <input class="amount num" id="fAmount" type="number" inputmode="decimal" placeholder="0" min="0" step="0.01">
-      <div class="cur" id="fCur"></div>
+      <input class="amount num" id="fAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+      <div class="cur"><div class="cur" id="fCur"></div><button type="button" id="fPlus" aria-label="Add another amount">+</button></div>
     </div>
     <div class="conv num" id="fConv"></div>
   </div>
@@ -667,15 +668,11 @@
 
   // ---------- helpers ----------
   const $ = (id) => document.getElementById(id);
-  const fmtA = (n, c) => {
-    if (c === 'JPY') return Math.round(n).toLocaleString('en-US');
-    const v = Math.round(n * 100) / 100;
-    return v.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 });
-  };
+  const fmtA = (n, c) => (Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmt = (n) => fmtA(n, S.base);
   const money = (n) => fmt(n) + ' ' + S.base;
   const moneyC = (n, c) => fmtA(n, c) + ' ' + c;
-  const fmtTHB = (b) => Math.round(b * thbPer(S.base)).toLocaleString('en-US');
+  const fmtTHB = (b) => (Math.round(b * thbPer(S.base) * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const approx = (b) => S.base === 'THB' ? '' : `≈ ${fmtTHB(b)} THB`;
   const fmtSigned = (n) => (Math.abs(n) <= 0.5 ? '0' : (n > 0 ? '+' : '−') + fmt(Math.abs(n))) + ` <small>${S.base}</small>`;
   const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -889,7 +886,7 @@
     F.advOrig = e && e.adv ? e.adv.orig : null;
     F.advManual = !!(e && e.adv);
     $('sheetTitle').textContent = e ? t('editEntry') : t('addEntry');
-    $('fAmount').value = e ? (e.orig != null ? e.orig : e.amount) : '';
+    setAmt(e ? (e.orig != null ? e.orig : e.amount) : '');
     $('fNote').value = e ? e.note || '' : '';
     $('fDate').value = e ? e.date : today();
     $('fDelete').style.display = e ? '' : 'none';
@@ -934,7 +931,7 @@
   }
   function renderShort() {
     const box = $('shortBox');
-    const v = parseFloat($('fAmount').value);
+    const v = amtExprVal($('fAmount').value);
     const isFund = F.type === 'expense' && F.paidBy === 'fund';
     if (!isFund || !(v > 0)) { box.classList.remove('on'); return; }
     const avail = availableFund();
@@ -953,22 +950,56 @@
   }
   $('fAdvAmt').oninput = () => { const v = parseFloat($('fAdvAmt').value); F.advManual = true; F.advOrig = v >= 0 ? Math.round(v * 100) / 100 : 0; renderShort(); };
   $('typeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { F.type = b.dataset.t; renderForm(); });
-  $('fAmount').oninput = updateConv;
+  // amount field: thousand separators + additive expressions (e.g. 1,200+350)
+  function amtExprVal(raw) {
+    const parts = String(raw).replace(/,/g, '').split('+').map(s => parseFloat(s)).filter(n => n > 0);
+    if (!parts.length) return NaN;
+    return Math.round(parts.reduce((a, b) => a + b, 0) * 100) / 100;
+  }
+  function fmtAmtPart(p) {
+    const neat = p.replace(/[^\d.]/g, '');
+    const dot = neat.indexOf('.');
+    const int = (dot >= 0 ? neat.slice(0, dot) : neat).replace(/^0+(?=\d)/, '');
+    const dec = dot >= 0 ? '.' + neat.slice(dot + 1).replace(/\./g, '').slice(0, 2) : '';
+    return int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + dec;
+  }
+  function fmtAmtExpr(raw) { return String(raw).split('+').map(fmtAmtPart).join('+'); }
+  function setAmt(v) { $('fAmount').value = v === '' || v == null ? '' : fmtAmtExpr(String(v)); }
+  function reformatAmt() {
+    const el = $('fAmount');
+    const before = el.value;
+    const caret = el.selectionStart == null ? before.length : el.selectionStart;
+    const sig = before.slice(0, caret).replace(/[^\d.+]/g, '').length;
+    const after = fmtAmtExpr(before);
+    if (after === before) return;
+    el.value = after;
+    let seen = 0, pos = after.length;
+    for (let i = 0; i < after.length; i++) { if (/[\d.+]/.test(after[i])) seen++; if (seen >= sig) { pos = i + 1; break; } }
+    if (sig === 0) pos = 0;
+    try { el.setSelectionRange(pos, pos); } catch (err) {}
+  }
+  $('fPlus').onclick = () => {
+    const el = $('fAmount');
+    if (el.value && !/\+$/.test(el.value)) { el.value += '+'; updateConv(); }
+    el.focus();
+  };
+  $('fAmount').oninput = () => { reformatAmt(); updateConv(); };
   function amountBase() {
-    const v = parseFloat($('fAmount').value);
+    const v = amtExprVal($('fAmount').value);
     if (!(v > 0)) return 0;
     return toBase(v, F.cur);
   }
   function updateConv() {
-    const v = parseFloat($('fAmount').value);
+    const v = amtExprVal($('fAmount').value);
     if (!(v > 0)) { $('fConv').textContent = ''; renderShort(); return; }
     const b = toBase(v, F.cur);
-    $('fConv').textContent = F.cur === S.base ? approx(v) : F.cur === 'THB' ? t('saveAs', money(b)) : [`= ${money(b)}`, approx(b)].filter(Boolean).join(' · ');
+    const sum = $('fAmount').value.includes('+') ? `= ${fmtA(v, F.cur)} ${F.cur}` : '';
+    $('fConv').textContent = [sum, F.cur === S.base ? approx(v) : F.cur === 'THB' ? t('saveAs', money(b)) : [`= ${money(b)}`, approx(b)].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
     renderShort();
   }
 
   $('fSave').onclick = () => {
-    const orig = Math.round(parseFloat($('fAmount').value) * 100) / 100;
+    const orig = amtExprVal($('fAmount').value);
     const amount = amountBase();
     if (!(orig > 0) || !amount) { toast(t('needAmount')); $('fAmount').focus(); return; }
     if (F.type === 'expense' && !F.split.length) { toast(t('needSplit')); return; }
