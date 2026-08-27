@@ -625,7 +625,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7">PiePot v7.2</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7">PiePot v7.3</p>
   </main>
 </div>
 
@@ -893,6 +893,9 @@
     if (o.palette !== 'cherry') o.palette = 'default';
     o.entries.forEach(e => { if (!e.cur) e.cur = 'JPY'; if (e.orig == null) e.orig = e.amount; });
     o.members.forEach(m => { if (OLD_COLORS[m.color]) m.color = OLD_COLORS[m.color]; });
+    // make sure every member has a distinct colour (older data could end up with duplicates)
+    const usedC = new Set();
+    o.members.forEach(m => { if (!COLORS.includes(m.color) || usedC.has(m.color)) m.color = COLORS.find(c => !usedC.has(c)) || m.color; usedC.add(m.color); });
     delete o.rate;
     return o;
   }
@@ -1213,7 +1216,8 @@
     if (S.members.length >= 12) { toast(t('maxMembers')); return; }
     const n = S.members.length;
     const id = 'm' + Date.now().toString(36);
-    S.members.push({ id, name: t('newMember', n + 1), color: COLORS[n % COLORS.length] });
+    const usedC = new Set(S.members.map(m => m.color));
+    S.members.push({ id, name: t('newMember', n + 1), color: COLORS.find(c => !usedC.has(c)) || COLORS[n % COLORS.length] });
     save(); renderAll();
     const inputs = $('membersEdit').querySelectorAll('input');
     const last = inputs[inputs.length - 1];
