@@ -283,6 +283,11 @@
   :root[data-palette="cherry"] .cat .bar i { background: linear-gradient(90deg, #B83A4B, #E8A8B4); }
   :root[data-palette="cherry"] .nav .fab { background: var(--fab-bg, var(--accent)); color: var(--fab-ink, var(--accent-ink)); }
 
+  .grp-item .entry { padding-left: 28px; }
+  .grp-item .entry .ic { width: 30px; height: 30px; font-size: 13px; }
+  .grp-arrow { font-size: 11px; opacity: .6; margin-left: 2px; }
+  .entry.grp-open { background: var(--surface-2); }
+
   /* ---------- header ---------- */
   .top { display: flex; align-items: center; justify-content: space-between; padding: 18px 2px 10px; gap: 10px; }
   .top h1 { font-size: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
@@ -617,7 +622,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7">PiePot v6</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7">PiePot v7</p>
   </main>
 </div>
 
@@ -753,6 +758,7 @@
     { id: 'other', th: 'อื่น ๆ', en: 'Other', icon: 'M12 5v.01M12 12v.01M12 19v.01' }
   ];
   const DEPOSIT_ICON = 'M12 3v18M6 9l6-6 6 6';
+  const GROUP_ICON = 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
   const CUR = {
     JPY: { sym: '¥', per: 100 },
     HKD: { sym: 'HK$', per: 1 },
@@ -1099,20 +1105,49 @@
     list = list.slice().sort((a, b) => b.date.localeCompare(a.date) || (b.ts || 0) - (a.ts || 0));
     if (!list.length) { $('entries').innerHTML = `<div class="empty"><b>${t('emptyList')}</b>${t('emptyListHint')}</div>`; return; }
     const days = {};
-    list.forEach(e => (days[e.date] = days[e.date] || []).push(e));
-    const rowWrap = (e) => selMode ? entryRow(e) : `<div class="swipe-wrap"><button class="swipe-del" data-del="${e.id}">${t('delete')}</button>${entryRow(e)}</div>`;
+    // group "everyone" deposits (same batch, one per current member) into a single row
+    const gkey = (e) => e.type !== 'deposit' ? null : (e.grp ? 'g:' + e.grp : `l:${e.date}|${e.note || ''}|${e.orig}|${e.cur}|${e.src || ''}`);
+    const gmap = {};
+    list.forEach(e => { const k = gkey(e); if (k) (gmap[k] = gmap[k] || []).push(e); });
+    const memberIds = S.members.map(m => m.id).sort().join(',');
+    const isGroup = (k) => { const es = gmap[k]; return es && es.length === S.members.length && es.length > 1 && es.map(e => e.by).sort().join(',') === memberIds; };
+    const seen = new Set();
+    const items = [];
+    list.forEach(e => {
+      const k = gkey(e);
+      if (k && isGroup(k)) { if (seen.has(k)) return; seen.add(k); items.push({ group: k, es: gmap[k], date: e.date }); }
+      else items.push({ e, date: e.date });
+    });
+    items.forEach(it => (days[it.date] = days[it.date] || []).push(it));
+    const rowWrap = (it) => {
+      if (it.group) {
+        const ids = it.es.map(e => e.id).join(',');
+        const open = openGrps.has(it.group);
+        const inner = groupRow(it.group, it.es, open) + (open ? it.es.map(e => `<div class="grp-item">${selMode ? entryRow(e) : `<div class="swipe-wrap"><button class="swipe-del" data-del="${e.id}">${t('delete')}</button>${entryRow(e)}</div>`}</div>`).join('') : '');
+        return selMode ? inner : `<div class="swipe-wrap"><button class="swipe-del" data-del="${ids}">${t('delete')}</button>${groupRow(it.group, it.es, open)}</div>` + (open ? it.es.map(e => `<div class="grp-item"><div class="swipe-wrap"><button class="swipe-del" data-del="${e.id}">${t('delete')}</button>${entryRow(e)}</div></div>`).join('') : '');
+      }
+      const e = it.e;
+      return selMode ? entryRow(e) : `<div class="swipe-wrap"><button class="swipe-del" data-del="${e.id}">${t('delete')}</button>${entryRow(e)}</div>`;
+    };
     $('entries').innerHTML = Object.keys(days).sort().reverse().map(d => {
-      const es = days[d];
+      const its = days[d];
+      const es = its.flatMap(it => it.group ? it.es : [it.e]);
       const spent = es.filter(e => e.type === 'expense').reduce((a, e) => a + amt(e), 0);
-      return `<div class="day"><div class="day-h"><span>${niceDate(d)}</span><span class="num">${spent ? t('daySpent') + ' ' + money(spent) : ''}</span></div><div class="card">${es.map(rowWrap).join('')}</div></div>`;
+      return `<div class="day"><div class="day-h"><span>${niceDate(d)}</span><span class="num">${spent ? t('daySpent') + ' ' + money(spent) : ''}</span></div><div class="card">${its.map(rowWrap).join('')}</div></div>`;
     }).join('');
     $('entries').querySelectorAll('.entry').forEach(b => b.onclick = () => {
       const w = b.closest('.swipe-wrap');
       if (w && (w.classList.contains('sw-open') || w.dataset.swiped)) { closeSw(); return; }
+      if (b.dataset.grp) {
+        const ids = b.dataset.ids.split(',');
+        if (selMode) { const allOn = ids.every(id => selIds.has(id)); ids.forEach(id => allOn ? selIds.delete(id) : selIds.add(id)); renderEntries(); return; }
+        if (openGrps.has(b.dataset.grp)) openGrps.delete(b.dataset.grp); else openGrps.add(b.dataset.grp);
+        renderEntries(); return;
+      }
       if (selMode) { const id = b.dataset.id; if (selIds.has(id)) selIds.delete(id); else selIds.add(id); renderEntries(); return; }
       openSheet(b.dataset.id);
     });
-    $('entries').querySelectorAll('.swipe-del').forEach(d => d.onclick = () => { closeSw(); deleteEntries(new Set([d.dataset.del])); });
+    $('entries').querySelectorAll('.swipe-del').forEach(d => d.onclick = () => { closeSw(); deleteEntries(new Set(d.dataset.del.split(','))); });
     if (!selMode) $('entries').querySelectorAll('.swipe-wrap').forEach(bindSwipe);
   }
   $('selectBtn').onclick = () => { selMode = !selMode; selIds.clear(); closeSw(); renderEntries(); };
@@ -1122,6 +1157,15 @@
     const ids = new Set(selIds); selMode = false; selIds.clear();
     deleteEntries(ids);
   };
+  const openGrps = new Set();
+  function groupRow(key, es, open) {
+    const e = es[0];
+    const total = es.reduce((a, x) => a + amt(x), 0);
+    const allSel = selMode && es.every(x => selIds.has(x.id));
+    const src = e.src === 'card' ? 'src-card' : e.src === 'cash' ? 'src-cash' : '';
+    const sub = [e.cur !== S.base ? moneyC(e.orig * es.length, e.cur) : '', e.cur === 'THB' ? '' : approx(total)].filter(Boolean).join(' · ');
+    return `<button class="entry deposit grp ${src} ${open ? 'grp-open' : ''}" data-grp="${key}" data-ids="${es.map(x => x.id).join(',')}">${selMode ? `<span class="ic ck ${allSel ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(GROUP_ICON)}</span>`}<span><span class="t">${esc(e.note || t('depositDefault'))}</span><span class="m">${t('putIn', t('everyone'))} · ${es.length} × ${fmt(amt(e))}${e.src ? ` <span class="pill src-${e.src}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span>` : ''} <span class="grp-arrow">${open ? '\u25B4' : '\u25BE'}</span></span></span><span class="amt num">+${fmt(total)} <small>${S.base}</small><span class="b">${sub}</span></span></button>`;
+  }
   const subAmt = (e) => [e.cur !== S.base ? moneyC(e.orig, e.cur) : '', e.cur === 'THB' ? '' : approx(amt(e))].filter(Boolean).join(' · ');
   function entryRow(e) {
     const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
@@ -1132,7 +1176,7 @@
     const ad = advBase(e);
     const who = e.paidBy === 'fund' ? (ad > 0 ? t('fromFundPlus', money(amt(e) - ad), esc(mname(e.adv.by)), money(ad)) : t('fromFund')) : t('advanced', esc(mname(e.paidBy)));
     const split = all ? t('splitN', S.members.length) : (e.split || []).length === 1 ? t('alone', esc(mname(e.split[0]))) : t('splitN', (e.split || []).map(mname).map(esc).join('/'));
-    return `<button class="entry ${e.paidBy === 'fund' && e.src === 'card' ? 'src-card' : e.paidBy === 'fund' && e.src === 'cash' ? 'src-cash' : ''}" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(cat.icon)}</span>`}<span><span class="t">${esc(e.note || catName(cat))}</span><span class="m">${who} · ${split}${e.paidBy === 'fund' && e.src ? ` <span class="pill src-${e.src}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span>` : ''}${e.paidBy !== 'fund' || ad > 0 ? ` <span class="pill warn">${t('reimburse')}</span>` : ''}</span></span><span class="amt num">${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+    return `<button class="entry ${e.paidBy === 'fund' && e.src === 'card' ? 'src-card' : e.paidBy === 'fund' && e.src === 'cash' ? 'src-cash' : ''}" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(cat.icon)}</span>`}<span><span class="t">${esc(e.note || catName(cat))}</span><span class="m">${who} · ${split}${e.paidBy === 'fund' && e.src ? ` <span class="pill src-${e.src}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span>` : ''}${e.paidBy !== 'fund' || ad > 0 ? ` <span class="pill warn">${t('reimburse')}</span>` : ''}</span></span><span class="amt num">−${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
   }
 
   function renderSettings() {
@@ -1327,7 +1371,8 @@
     };
     if (F.type === 'deposit') { e.src = F.src === 'card' ? 'card' : 'cash'; S.lastSrc = e.src; }
     if (F.type === 'deposit' && F.by === 'all' && !F.id) {
-      S.members.forEach(m => S.entries.push({ ...e, id: uid(), by: m.id }));
+      const grp = uid();
+      S.members.forEach(m => S.entries.push({ ...e, id: uid(), by: m.id, grp }));
       save(); closeSheet(); renderAll();
       toast(t('depositedAllToast', money(amount), S.members.length));
       return;
