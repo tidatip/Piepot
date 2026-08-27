@@ -617,6 +617,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7">PiePot v6</p>
   </main>
 </div>
 
@@ -1478,8 +1479,29 @@
 })();
 </script>
 <script>
+  // service worker: register, check for updates, and auto-reload when a new version takes over
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloading) return; reloading = true; location.reload();
+    });
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        reg.update();
+        if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+        reg.addEventListener('updatefound', () => {
+          const sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener('statechange', () => {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) sw.postMessage('SKIP_WAITING');
+          });
+        });
+        setInterval(() => reg.update(), 60 * 60 * 1000);
+      }).catch(() => {});
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {});
+    });
   }
 </script>
 </body>
