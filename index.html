@@ -134,6 +134,13 @@
   .hero .bar { height: 8px; border-radius: 6px; background: var(--hero-track); margin-top: 14px; overflow: hidden; }
   .hero .bar i { display: block; height: 100%; background: var(--accent-ink); opacity: .85; border-radius: 6px; width: 0; transition: width .4s ease; }
   .hero .row { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 13px; opacity: .9; }
+  .hero .src-lbl-row { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--hero-track); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; opacity: .78; font-weight: 500; }
+  .hero .src-row { margin-top: 3px; }
+  /* cash = warm gold tone, card = teal tone (same palette as the rest of the app) */
+  .entry.src-cash .ic, .entry.deposit.src-cash .ic { background: var(--in-soft); color: var(--in); }
+  .entry.src-card .ic, .entry.deposit.src-card .ic { background: var(--accent-soft); color: var(--accent); }
+  .pill.src-cash { background: var(--in-soft); color: var(--in); }
+  .pill.src-card { background: var(--accent-soft); color: var(--accent); }
   .hero.low { background: var(--warn); }
   .hero.neg { background: var(--out); }
 
@@ -194,7 +201,8 @@
   .entry .m { display: block; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .entry .amt { text-align: right; font-weight: 600; font-size: 15px; }
   .entry .amt .b { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
-  .entry.deposit .amt { color: var(--in); }
+  .entry.src-cash .amt { color: var(--in); }
+  .entry.src-card .amt { color: var(--accent); }
   .empty { text-align: center; color: var(--muted); padding: 40px 16px; font-size: 14px; }
   .empty b { display: block; color: var(--ink-2); font-size: 17px; margin-bottom: 4px; }
 
@@ -202,6 +210,21 @@
   .filters::-webkit-scrollbar { display: none; }
   .chip { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 500; color: var(--ink-2); }
   .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  /* ---------- swipe-to-delete & multi-select ---------- */
+  .list-top { display: flex; gap: 8px; align-items: flex-start; }
+  .list-top .filters { flex: 1; min-width: 0; }
+  #entries .card { overflow: hidden; }
+  .swipe-wrap { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+  .swipe-wrap:last-child { border-bottom: 0; }
+  .swipe-wrap .entry { border-bottom: 0; position: relative; z-index: 1; background: var(--surface); transition: transform .22s ease; }
+  .swipe-del { position: absolute; top: 0; right: 0; bottom: 0; width: 84px; background: var(--out); color: #fff; font-weight: 600; font-size: 14px; z-index: 0; }
+  .entry .ic.ck, .entry.deposit .ic.ck { width: 26px; height: 26px; margin: 7px auto; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); color: transparent; font-size: 15px; font-weight: 700; }
+  .entry .ic.ck.on, .entry.deposit .ic.ck.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .selbar { position: fixed; left: 16px; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); max-width: 448px; margin: 0 auto; z-index: 25; display: none; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 16px; box-shadow: var(--shadow); }
+  .selbar.on { display: flex; }
+  .selbar .c { font-size: 14px; font-weight: 500; color: var(--ink-2); }
+  .selbar .btn.danger { flex: 0 0 auto; padding: 10px 16px; }
 
   /* ---------- bottom nav ---------- */
   .nav {
@@ -322,6 +345,8 @@
     <div class="thb num">≈ <span id="balTHB">0</span> THB</div>
     <div class="bar"><i id="balBar"></i></div>
     <div class="row num"><span><span data-i="fundIn"></span> <span id="fundIn">0</span> <span class="cc"></span></span><span><span data-i="fundOut"></span> <span id="fundOut">0</span> <span class="cc"></span></span></div>
+    <div class="row src-lbl-row" id="srcLblRow" style="display:none"><span data-i="srcRemaining"></span></div>
+    <div class="row num src-row" id="srcRow" style="display:none"><span><span data-i="srcCash"></span> <span id="srcCashBal">0</span> <span class="cc"></span></span><span><span data-i="srcCard"></span> <span id="srcCardBal">0</span> <span class="cc"></span></span></div>
   </section>
 
   <!-- ===== summary ===== -->
@@ -341,7 +366,10 @@
 
   <!-- ===== entries ===== -->
   <main id="v-list" class="view">
-    <div class="filters" id="filters"></div>
+    <div class="list-top">
+      <div class="filters" id="filters"></div>
+      <button class="chip" id="selectBtn"></button>
+    </div>
     <div id="entries"></div>
   </main>
 
@@ -467,6 +495,14 @@
     <div class="hint" id="depHint"></div>
   </div>
 
+  <div class="field" id="srcField">
+    <label data-i="srcLabel"></label>
+    <div class="seg" id="fSrc">
+      <button data-s="cash" data-i="srcCash"></button>
+      <button data-s="card" data-i="srcCard"></button>
+    </div>
+  </div>
+
   <div class="field">
     <label data-i="date"></label>
     <input class="txt num" id="fDate" type="date">
@@ -502,6 +538,8 @@
     <button class="btn primary" id="ntGo" data-i="newTripGo"></button>
   </div>
 </div>
+
+<div class="selbar" id="selbar"><span class="c" id="selCount"></span><button class="btn danger" id="selDelete"></button></div>
 
 <div class="toast" id="toast"></div>
 
@@ -550,6 +588,7 @@
       navSum: 'สรุป', navList: 'รายการ', navPeople: 'คน', navSet: 'ตั้งค่า',
       addEntry: 'เพิ่มรายการ', editEntry: 'แก้ไขรายการ', typeExpense: 'จ่าย', typeDeposit: 'รับเงิน', amount: 'จำนวนเงิน', note: 'รายการ',
       notePhExp: 'เช่น ราเมงกลางวัน, ค่าน้ำมัน, ตั๋ว Alpine Route', notePhDep: 'เช่น รับเงินก่อนออกเดินทาง, รับเพิ่มรอบ 2',
+      srcLabel: 'แหล่งเงิน', srcCash: 'เงินสด', srcCard: 'บัตร', srcRemaining: 'คงเหลือ',
       category: 'หมวด', paidBy: 'ใครจ่าย', paidByHint: 'ถ้าเพื่อนสำรองจ่ายเอง เลือกชื่อคนนั้น ระบบจะคิดคืนให้ตอนปิดทริป', splitAmong: 'หารกัน', depositBy: 'รับจากใคร', date: 'วันที่',
       delete: 'ลบ', cancel: 'ยกเลิก', save: 'บันทึก', undo: 'เลิกทำ', fund: 'กองกลาง', everyone: 'ทุกคน', shortTitle: (bal, short) => `กองกลางเหลือ ${bal} ไม่พอ ขาดอีก ${short}`, shortNone: 'กองกลางพอจ่าย แต่มีคนสำรองจ่ายบางส่วน', advBy: 'ใครสำรองจ่ายส่วนที่ขาด', advAmt: 'ยอดที่สำรองจ่าย', fundPart: 'ส่วนที่กองจ่าย', advHintOn: (n, v) => `${n} สำรอง ${v} จะได้คืนตอนปิดทริป`, advHintOff: 'ถ้าไม่เลือกใคร จะถือว่ากองกลางจ่ายทั้งหมด (ยอดกองติดลบ)', fromFundPlus: (f, n, v) => `กอง ${f} + ${n} สำรอง ${v}`, sumAdvancedPart: (n, v) => `(${n} สำรอง ${v})`, everyoneHint: (n) => `บันทึกแยกเป็นรายการของแต่ละคน ${n} คน ยอดเท่ากัน`, depositedAllToast: (v, n) => `รับ ${v} จากทุกคน (${n} รายการ) แล้ว`,
       getBack: 'ได้คืน', payMore: 'ต้องจ่ายเพิ่ม', even: '', net: 'สุทธิ',
@@ -566,7 +605,7 @@
       explain: 'สุทธิ = รับ + สำรองจ่าย − ส่วนที่ต้องออก · บวกคือได้คืน ลบคือจ่ายเพิ่ม',
       splitAll: 'หารเท่ากันทุกคน', splitNone: 'เลือกอย่างน้อย 1 คน', splitSome: (n, names) => `หาร ${n} คน: ${names}`,
       saveAs: (v) => `บันทึกเป็น ${v}`, needAmount: 'ใส่จำนวนเงินก่อน', needSplit: 'เลือกคนที่หารอย่างน้อย 1 คน',
-      edited: 'แก้ไขแล้ว', depositedToast: (v) => `รับ ${v} แล้ว`, savedToast: (v) => `บันทึก ${v} แล้ว`, deletedToast: 'ลบรายการแล้ว',
+      edited: 'แก้ไขแล้ว', depositedToast: (v) => `รับ ${v} แล้ว`, savedToast: (v) => `บันทึก ${v} แล้ว`, deletedToast: 'ลบรายการแล้ว', select: 'เลือก', selCount: (n) => `เลือกแล้ว ${n} รายการ`, deleteSel: (n) => `ลบ ${n} รายการ`, deleteNConfirm: (n) => `ลบ ${n} รายการที่เลือก?`, deletedNToast: (n) => `ลบ ${n} รายการแล้ว`,
       copyFail: 'คัดลอกอัตโนมัติไม่ได้ กดค้างที่ข้อความในพรีวิวเพื่อเลือกคัดลอกเอง',
       sumTitle: (trip, c) => `${trip} — สรุปกองกลาง (หน่วย ${c})`, sumBalance: 'คงเหลือ', sumIn: 'รับ', sumOut: 'จ่าย', sumSpent: 'ใช้รวม',
       sumPerson: (name, i, paid, share, status, v) => `${name}: รับ ${i}${paid ? ` สำรอง ${paid}` : ''} ออก ${share} → ${[status, v].filter(Boolean).join(' ')}`, sumPayMore: 'จ่ายเพิ่ม',
@@ -595,6 +634,7 @@
       navSum: 'Summary', navList: 'Entries', navPeople: 'People', navSet: 'Settings',
       addEntry: 'New entry', editEntry: 'Edit entry', typeExpense: 'Expense', typeDeposit: 'Chip in', amount: 'Amount', note: 'Description',
       notePhExp: 'e.g. Ramen lunch, fuel, Alpine Route tickets', notePhDep: 'e.g. Chip-in before departure, top-up #2',
+      srcLabel: 'Money source', srcCash: 'Cash', srcCard: 'Card', srcRemaining: 'Remaining',
       category: 'Category', paidBy: 'Paid by', paidByHint: 'If a friend paid out of pocket, pick their name — they cash out at trip end', splitAmong: 'Split among', depositBy: 'Who chipped in', date: 'Date',
       delete: 'Delete', cancel: 'Cancel', save: 'Save', undo: 'Undo', fund: 'Fund', everyone: 'All', shortTitle: (bal, short) => `Fund has only ${bal} — short by ${short}`, shortNone: 'Fund can cover it, but someone advances part', advBy: 'Who advances the shortfall', advAmt: 'Amount advanced', fundPart: 'Paid by fund', advHintOn: (n, v) => `${n} advances ${v}, cashes out at trip end`, advHintOff: 'If no one is picked, the fund pays it all (balance goes negative)', fromFundPlus: (f, n, v) => `Fund ${f} + ${n} advanced ${v}`, sumAdvancedPart: (n, v) => `(${n} advanced ${v})`, everyoneHint: (n) => `Saved as ${n} separate entries, one per person, same amount`, depositedAllToast: (v, n) => `Chipped in ${v} from everyone (${n} entries)`,
       getBack: 'Cash out', payMore: 'owes', even: '', net: 'net',
@@ -611,7 +651,7 @@
       explain: 'Net = chip in + advanced − share · positive cashes out, negative owes',
       splitAll: 'Split equally among everyone', splitNone: 'Pick at least 1 person', splitSome: (n, names) => `Split ${n}: ${names}`,
       saveAs: (v) => `Saved as ${v}`, needAmount: 'Enter an amount first', needSplit: 'Pick at least 1 person to split with',
-      edited: 'Saved changes', depositedToast: (v) => `Chipped in ${v}`, savedToast: (v) => `Saved ${v}`, deletedToast: 'Entry deleted',
+      edited: 'Saved changes', depositedToast: (v) => `Chipped in ${v}`, savedToast: (v) => `Saved ${v}`, deletedToast: 'Entry deleted', select: 'Select', selCount: (n) => `${n} selected`, deleteSel: (n) => `Delete ${n}`, deleteNConfirm: (n) => `Delete ${n} selected entries?`, deletedNToast: (n) => `Deleted ${n} entries`,
       copyFail: 'Couldn\'t copy automatically — long-press the preview text to select and copy it',
       sumTitle: (trip, c) => `${trip} — fund summary (in ${c})`, sumBalance: 'Balance', sumIn: 'Chip in', sumOut: 'Paid from fund', sumSpent: 'Total spent',
       sumPerson: (name, i, paid, share, status, v) => `${name}: chipped in ${i}${paid ? ` advanced ${paid}` : ''} share ${share} → ${[status, v].filter(Boolean).join(' ')}`, sumPayMore: 'owes',
@@ -710,6 +750,14 @@
         if (split.length) split.forEach(id => r.per[id].share += a / split.length);
       }
     });
+    r.bySrc = { cash: 0, card: 0 };
+    S.entries.forEach(e => {
+      const a = amt(e);
+      const src = e.src === 'card' ? 'card' : 'cash';
+      if (e.type === 'deposit') r.bySrc[src] += a;
+      else if (e.paidBy === 'fund') r.bySrc[src] -= a - advBase(e);
+    });
+    r.hasCard = S.entries.some(e => e.src === 'card');
     r.balance = r.fundIn - r.fundOut;
     S.members.forEach(m => { const p = r.per[m.id]; p.net = p.in + p.paid - p.share; });
     return r;
@@ -740,6 +788,9 @@
     $('balTHB').textContent = fmtTHB(r.balance);
     $('fundIn').textContent = fmt(r.fundIn);
     $('fundOut').textContent = fmt(r.fundOut);
+    $('srcRow').style.display = r.hasCard ? '' : 'none';
+    $('srcLblRow').style.display = r.hasCard ? '' : 'none';
+    if (r.hasCard) { $('srcCashBal').textContent = fmt(r.bySrc.cash); $('srcCardBal').textContent = fmt(r.bySrc.card); }
     const pct = r.fundIn > 0 ? Math.max(0, Math.min(100, r.balance / r.fundIn * 100)) : 0;
     $('balBar').style.width = pct + '%';
     const hero = $('hero');
@@ -789,7 +840,46 @@
   }
 
   let filter = 'all';
+  // ---------- multi-select & swipe-to-delete state ----------
+  let selMode = false;
+  const selIds = new Set();
+  let swOpen = null;
+  function closeSw() { if (swOpen) { const r = swOpen.querySelector('.entry'); if (r) r.style.transform = ''; swOpen.classList.remove('sw-open'); swOpen = null; } }
+  function deleteEntries(ids) {
+    const removed = [];
+    S.entries = S.entries.filter(e => { if (ids.has(e.id)) { removed.push(e); return false; } return true; });
+    if (!removed.length) return;
+    save(); renderAll();
+    toast(removed.length > 1 ? t('deletedNToast', removed.length) : t('deletedToast'), () => { S.entries.push(...removed); save(); renderAll(); });
+  }
+  function bindSwipe(w) {
+    const row = w.querySelector('.entry');
+    let sx = 0, sy = 0, dx = 0, drag = false, horiz = null;
+    w.addEventListener('touchstart', (ev) => { const p = ev.touches[0]; sx = p.clientX; sy = p.clientY; dx = 0; horiz = null; drag = true; row.style.transition = 'none'; if (swOpen && swOpen !== w) closeSw(); }, { passive: true });
+    w.addEventListener('touchmove', (ev) => {
+      if (!drag) return;
+      const p = ev.touches[0]; const mx = p.clientX - sx, my = p.clientY - sy;
+      if (horiz === null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) horiz = Math.abs(mx) > Math.abs(my);
+      if (!horiz) return;
+      const base = w.classList.contains('sw-open') ? -84 : 0;
+      dx = Math.max(-84, Math.min(0, base + mx));
+      row.style.transform = `translateX(${dx}px)`;
+    }, { passive: true });
+    w.addEventListener('touchend', () => {
+      if (!drag) return;
+      drag = false; row.style.transition = '';
+      if (horiz && dx < -42) { row.style.transform = 'translateX(-84px)'; w.classList.add('sw-open'); swOpen = w; }
+      else { row.style.transform = ''; w.classList.remove('sw-open'); if (swOpen === w) swOpen = null; }
+      if (horiz) { w.dataset.swiped = '1'; setTimeout(() => { delete w.dataset.swiped; }, 350); }
+    });
+  }
   function renderEntries() {
+    $('selectBtn').textContent = selMode ? t('cancel') : t('select');
+    $('selectBtn').classList.toggle('on', selMode);
+    $('selbar').classList.toggle('on', selMode);
+    $('selCount').textContent = t('selCount', selIds.size);
+    $('selDelete').textContent = t('deleteSel', selIds.size);
+    $('selDelete').disabled = !selIds.size;
     const counts = {};
     S.entries.forEach(e => { const k = e.type === 'deposit' ? 'deposit' : e.cat; counts[k] = (counts[k] || 0) + 1; });
     const chips = [{ id: 'all', label: t('all') }, { id: 'deposit', label: t('typeDeposit') }, ...CATS.map(c => ({ id: c.id, label: catName(c) }))].filter(c => c.id === 'all' || counts[c.id]);
@@ -801,24 +891,39 @@
     if (!list.length) { $('entries').innerHTML = `<div class="empty"><b>${t('emptyList')}</b>${t('emptyListHint')}</div>`; return; }
     const days = {};
     list.forEach(e => (days[e.date] = days[e.date] || []).push(e));
+    const rowWrap = (e) => selMode ? entryRow(e) : `<div class="swipe-wrap"><button class="swipe-del" data-del="${e.id}">${t('delete')}</button>${entryRow(e)}</div>`;
     $('entries').innerHTML = Object.keys(days).sort().reverse().map(d => {
       const es = days[d];
       const spent = es.filter(e => e.type === 'expense').reduce((a, e) => a + amt(e), 0);
-      return `<div class="day"><div class="day-h"><span>${niceDate(d)}</span><span class="num">${spent ? t('daySpent') + ' ' + money(spent) : ''}</span></div><div class="card">${es.map(entryRow).join('')}</div></div>`;
+      return `<div class="day"><div class="day-h"><span>${niceDate(d)}</span><span class="num">${spent ? t('daySpent') + ' ' + money(spent) : ''}</span></div><div class="card">${es.map(rowWrap).join('')}</div></div>`;
     }).join('');
-    $('entries').querySelectorAll('.entry').forEach(b => b.onclick = () => openSheet(b.dataset.id));
+    $('entries').querySelectorAll('.entry').forEach(b => b.onclick = () => {
+      const w = b.closest('.swipe-wrap');
+      if (w && (w.classList.contains('sw-open') || w.dataset.swiped)) { closeSw(); return; }
+      if (selMode) { const id = b.dataset.id; if (selIds.has(id)) selIds.delete(id); else selIds.add(id); renderEntries(); return; }
+      openSheet(b.dataset.id);
+    });
+    $('entries').querySelectorAll('.swipe-del').forEach(d => d.onclick = () => { closeSw(); deleteEntries(new Set([d.dataset.del])); });
+    if (!selMode) $('entries').querySelectorAll('.swipe-wrap').forEach(bindSwipe);
   }
+  $('selectBtn').onclick = () => { selMode = !selMode; selIds.clear(); closeSw(); renderEntries(); };
+  $('selDelete').onclick = () => {
+    if (!selIds.size) return;
+    if (!confirm(t('deleteNConfirm', selIds.size))) return;
+    const ids = new Set(selIds); selMode = false; selIds.clear();
+    deleteEntries(ids);
+  };
   const subAmt = (e) => [e.cur !== S.base ? moneyC(e.orig, e.cur) : '', e.cur === 'THB' ? '' : approx(amt(e))].filter(Boolean).join(' · ');
   function entryRow(e) {
     const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
     if (e.type === 'deposit') {
-      return `<button class="entry deposit" data-id="${e.id}"><span class="ic">${svgIcon(DEPOSIT_ICON)}</span><span><span class="t">${esc(e.note || t('depositDefault'))}</span><span class="m">${t('putIn', esc(mname(e.by)))}</span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+      return `<button class="entry deposit ${e.src === 'card' ? 'src-card' : e.src === 'cash' ? 'src-cash' : ''}" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(DEPOSIT_ICON)}</span>`}<span><span class="t">${esc(e.note || t('depositDefault'))}</span><span class="m">${t('putIn', esc(mname(e.by)))}${e.src ? ` <span class="pill src-${e.src}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span>` : ''}</span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
     }
     const all = (e.split || []).length === S.members.length;
     const ad = advBase(e);
     const who = e.paidBy === 'fund' ? (ad > 0 ? t('fromFundPlus', money(amt(e) - ad), esc(mname(e.adv.by)), money(ad)) : t('fromFund')) : t('advanced', esc(mname(e.paidBy)));
     const split = all ? t('splitN', S.members.length) : (e.split || []).length === 1 ? t('alone', esc(mname(e.split[0]))) : t('splitN', (e.split || []).map(mname).map(esc).join('/'));
-    return `<button class="entry" data-id="${e.id}"><span class="ic">${svgIcon(cat.icon)}</span><span><span class="t">${esc(e.note || catName(cat))}</span><span class="m">${who} · ${split}${e.paidBy !== 'fund' || ad > 0 ? ` <span class="pill warn">${t('reimburse')}</span>` : ''}</span></span><span class="amt num">${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+    return `<button class="entry ${e.paidBy === 'fund' && e.src === 'card' ? 'src-card' : e.paidBy === 'fund' && e.src === 'cash' ? 'src-cash' : ''}" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(cat.icon)}</span>`}<span><span class="t">${esc(e.note || catName(cat))}</span><span class="m">${who} · ${split}${e.paidBy === 'fund' && e.src ? ` <span class="pill src-${e.src}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span>` : ''}${e.paidBy !== 'fund' || ad > 0 ? ` <span class="pill warn">${t('reimburse')}</span>` : ''}</span></span><span class="amt num">${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
   }
 
   function renderSettings() {
@@ -885,6 +990,7 @@
     F.advBy = e && e.adv ? e.adv.by : null;
     F.advOrig = e && e.adv ? e.adv.orig : null;
     F.advManual = !!(e && e.adv);
+    F.src = e ? (e.src === 'card' ? 'card' : 'cash') : (S.lastSrc === 'card' ? 'card' : 'cash');
     $('sheetTitle').textContent = e ? t('editEntry') : t('addEntry');
     setAmt(e ? (e.orig != null ? e.orig : e.amount) : '');
     $('fNote').value = e ? e.note || '' : '';
@@ -920,6 +1026,8 @@
     $('fDep').innerHTML = (F.id ? '' : `<button data-d="all" class="${F.by === 'all' ? 'on' : ''}">${t('everyone')}</button>`) + S.members.map(m => `<button data-d="${m.id}" class="${F.by === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
     $('depHint').textContent = F.by === 'all' ? t('everyoneHint', S.members.length) : '';
     $('fDep').querySelectorAll('button').forEach(b => b.onclick = () => { F.by = b.dataset.d; renderForm(); });
+    $('srcField').style.display = (!isExp || F.paidBy === 'fund') ? '' : 'none';
+    $('fSrc').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.s === F.src); b.onclick = () => { F.src = b.dataset.s; renderForm(); }; });
     updateConv();
   }
   // fund balance available for this entry (excluding the entry being edited)
@@ -1006,6 +1114,7 @@
     const e = {
       id: F.id || uid(), type: F.type, cur: F.cur, orig, amount: Math.round(amount * 100) / 100, note: $('fNote').value.trim(), date: $('fDate').value || today(), ts: Date.now()
     };
+    if (F.type === 'deposit') { e.src = F.src === 'card' ? 'card' : 'cash'; S.lastSrc = e.src; }
     if (F.type === 'deposit' && F.by === 'all' && !F.id) {
       S.members.forEach(m => S.entries.push({ ...e, id: uid(), by: m.id }));
       save(); closeSheet(); renderAll();
@@ -1016,6 +1125,7 @@
       e.cat = F.cat; e.paidBy = F.paidBy; e.split = F.split.slice();
       if (F.paidBy === 'fund' && F.advBy && F.advOrig > 0) e.adv = { by: F.advBy, orig: Math.min(orig, Math.round(F.advOrig * 100) / 100) };
     } else { e.by = F.by; }
+    if (F.type === 'expense' && F.paidBy === 'fund') { e.src = F.src === 'card' ? 'card' : 'cash'; S.lastSrc = e.src; }
     const i = S.entries.findIndex(x => x.id === e.id);
     if (i >= 0) { e.ts = S.entries[i].ts || e.ts; S.entries[i] = e; } else S.entries.push(e);
     save(); closeSheet(); renderAll();
