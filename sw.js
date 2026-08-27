@@ -1,4 +1,4 @@
-const CACHE = 'piepot-v1';
+const CACHE = 'piepot-v2';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest'])).then(() => self.skipWaiting()));
 });

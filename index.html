@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#517B7B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -271,7 +271,7 @@
   .cur button { padding: 0 12px; min-width: 60px; border-radius: 10px; border: 1px solid var(--line); font-weight: 600; font-size: 13px; color: var(--muted); background: var(--surface); }
   .cur button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   .conv { font-size: 13px; color: var(--muted); text-align: right; margin-top: 6px; min-height: 1.2em; }
-  .txt { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 15px; }
+  .txt { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 16px; }
   .choices { display: flex; flex-wrap: wrap; gap: 8px; }
   .choices button { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 500; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
   .choices button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
@@ -531,7 +531,7 @@
   const I18N = {
     th: {
       appName: 'PiePot', balance: 'เงินกองกลางคงเหลือ', fundIn: 'รับ', fundOut: 'จ่าย',
-      spentAll: 'ใช้ไปทั้งหมด', perHead: 'เฉลี่ยต่อคน', whereEveryone: 'แต่ละคนอยู่ตรงไหน', howCalc: 'ดูวิธีคิด', spentOn: 'ใช้ไปกับอะไรบ้าง',
+      spentAll: 'ใช้ไปทั้งหมด', perHead: 'เฉลี่ยต่อคน', whereEveryone: 'Slice Status', howCalc: 'ดูวิธีคิด', spentOn: 'ใช้ไปกับอะไรบ้าง',
       members: 'สมาชิก', atTripEnd: 'ตอนปิดทริป', language: 'ภาษา / Language', tripName: 'ชื่อทริป', tripPh: 'เช่น ญี่ปุ่น ต.ค. 69, ฮ่องกง 3 วัน',
       membersHint: 'ใส่ชื่อเล่นสั้น ๆ จะได้อ่านง่ายในรายการ · ลบได้เฉพาะคนที่ยังไม่มีรายการ', addMember: '+ เพิ่มสมาชิก',
       baseCur: 'สกุลเงินของทริป', baseCurHint: 'เลือกสกุลเงินที่ใช้ในทริปนี้ ยอดทุกอย่างจะแสดงเป็นสกุลนี้คู่กับเงินบาท และตอนบันทึกเลือกกรอกเป็นสกุลทริปหรือบาทก็ได้',
