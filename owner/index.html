@@ -721,7 +721,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.2</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.3</p>
   </main>
 </div>
 
@@ -2194,7 +2194,10 @@
       'body.pp-member #v-set .card:not(.pp-keep){display:none}',
       'body.pp-member #v-set .section-h{display:none}',
       'body.pp-member #rateBtn{pointer-events:none;opacity:.6}',
-      'body.pp-member #selectBtn{display:none}'
+      'body.pp-member #selectBtn{display:none}',
+      // viewer: no personal tab, no FAB gap -> three evenly spaced tabs
+      'body.pp-member .nav [data-v="mine"]{display:none}',
+      'body.pp-member .nav .in{grid-template-columns:repeat(3,1fr)}'
     ].join('');
     document.head.appendChild(css);
   })();
@@ -2486,6 +2489,7 @@
           adopt(d);
           listen(urlCode);
           showView('sum');
+          document.body.classList.remove('v-mine');
         }
       } catch (e) { toast(t('shNoNet')); }
       renderShare();
