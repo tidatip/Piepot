@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>PiePot</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
@@ -236,6 +236,11 @@
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   ::placeholder { color: var(--muted); }
 
+  /* ===== My Slice hero: solid gold block, sibling of the teal fund hero ===== */
+  /* honey gold straight from the palette - same in light and dark, with cocoa text on top */
+  :root { --mine-bg: #E5B569; --mine-ink: #2E2412; --mine-rule: rgba(0,0,0,.18); }
+  :root[data-palette="cherry"] { --mine-bg: #D9A45B; --mine-ink: #3A2A1E; --mine-rule: rgba(0,0,0,.2); }
+
   .app { max-width: 480px; margin: 0 auto; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
 
   /* ---------- start screen ---------- */
@@ -318,6 +323,22 @@
   .entry.src-card .ic, .entry.deposit.src-card .ic { background: var(--accent-soft); color: var(--accent); }
   .pill.src-cash { background: var(--in-soft); color: var(--in); }
   .pill.src-card { background: var(--accent-soft); color: var(--accent); }
+  .hero.mine { background: var(--mine-bg); color: var(--mine-ink); border: 0; box-shadow: var(--shadow); }
+  .hero.mine .split { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--mine-rule); }
+  .hero.mine .split .row { margin-top: 5px; font-size: 14px; opacity: .92; }
+  .hero.mine .split .row:first-child { margin-top: 0; }
+  .hero.mine .split .row b { font-weight: 600; opacity: 1; }
+  .hero.mine .split #mySrcRow { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--mine-rule); font-size: 13px; opacity: .8; }
+  .hero.mine .split #mySrcRow b { font-weight: 500; }
+  #myCats .cat .bar i { background: var(--in); }
+  body.v-mine #hero { display: none; }
+  #mePickCard { margin-bottom: 16px; }
+  .fundlink { display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--muted); font-size: 13px; text-align: left; }
+  .fundlink b { margin-left: auto; color: var(--accent); font-weight: 600; font-size: 14px; }
+  .fundlink .chev { color: var(--muted); font-size: 17px; line-height: 1; margin-left: -2px; }
+  .fundlink:active { background: var(--surface-2); }
+  .mine-note { font-size: 12px; color: var(--muted); margin: 10px 4px 0; line-height: 1.55; }
+  .mine-note + .mine-note { margin-top: 7px; }
   .hero.low { background: var(--warn); }
   .hero.neg { background: var(--out); }
 
@@ -352,6 +373,13 @@
   .person .net { text-align: right; font-weight: 600; font-size: 16px; }
   .person .net .t { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
   .pos { color: var(--in); } .negv { color: var(--out); }
+  /* Slice Status: name + net on one line, the three figures full width underneath */
+  .person.slice { grid-template-columns: 36px 1fr; align-items: center; gap: 10px; padding: 10px 14px; }
+  .person.slice .slice-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .person.slice .net { font-size: 16px; flex: 0 0 auto; text-align: right; }
+  .person.slice .net .t { display: inline; margin-right: 5px; }
+  .person.slice .meta { line-height: 1.32; margin-top: 0; }
+  .person.slice .meta:first-of-type { margin-top: 4px; }
 
   .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; line-height: 1.5; }
   .pill.warn { background: var(--warn-soft); color: var(--warn); }
@@ -410,7 +438,7 @@
     padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
   }
   .nav .in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr 72px 1fr 1fr; align-items: end; }
-  .nav button { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--muted); padding: 6px 0 4px; font-weight: 500; }
+  .nav button { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; white-space: nowrap; color: var(--muted); padding: 6px 0 4px; font-weight: 500; }
   .nav button svg { width: 22px; height: 22px; }
   .nav button.on { color: var(--accent); }
   .nav .fab { margin: -26px auto 0; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; box-shadow: var(--shadow); }
@@ -420,16 +448,21 @@
   .scrim { position: fixed; inset: 0; background: var(--overlay); z-index: 30; display: none; }
   .scrim.on { display: block; }
   .sheet {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 31;
+    position: fixed; left: 0; right: 0; bottom: var(--kb, 0px); z-index: 31;
     background: var(--surface); border-radius: 20px 20px 0 0;
-    max-width: 520px; margin: 0 auto; max-height: 92vh; overflow-y: auto;
+    max-width: 520px; margin: 0 auto;
+    max-height: min(92vh, calc(var(--vvh, 100vh) - 10px));
+    --sheet-h: min(88vh, calc(var(--vvh, 100vh) - 10px));
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     padding: 10px 18px calc(18px + env(safe-area-inset-bottom));
     transform: translateY(105%); visibility: hidden; transition: transform .28s cubic-bezier(.2,.8,.2,1), visibility 0s linear .28s;
   }
   .sheet.on { transform: translateY(0); visibility: visible; transition-delay: 0s; }
+  body.kb .sheet { padding-bottom: 14px; }
+  body.sheet-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
   @media (prefers-reduced-motion: reduce) { .sheet, .hero .bar i { transition: none; } }
   .grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 12px; }
-  .sheet h2 { font-size: 18px; margin-bottom: 12px; }
+  .sheet h2 { font-size: 18px; margin-bottom: 10px; }
 
   /* ---------- share preview ---------- */
   .share-prev { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; max-height: 56vh; overflow-y: auto; font-size: 13.5px; line-height: 1.5; -webkit-user-select: text; user-select: text; }
@@ -463,16 +496,20 @@
   body.base-thb #rateBlock { display: none; }
   body.base-thb .hero .thb, body.base-thb .stat .s { display: none; }
 
-  .field { margin-top: 14px; }
+  .field { margin-top: 12px; }
   .field label { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; letter-spacing: .02em; }
   .amount-wrap { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: stretch; }
-  .amount { width: 100%; font-size: 34px; font-weight: 600; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); text-align: right; }
+  .amount { width: 100%; font-size: 32px; font-weight: 600; padding: 7px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); text-align: right; }
   .cur { display: grid; grid-auto-rows: 1fr; gap: 4px; }
   .cur button { padding: 0 12px; min-width: 60px; border-radius: 10px; border: 1px solid var(--line); font-weight: 600; font-size: 13px; color: var(--muted); background: var(--surface); }
   #fPlus { font-size: 18px; line-height: 1; color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); min-height: 34px; }
   .cur button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   .conv { font-size: 13px; color: var(--muted); text-align: right; margin-top: 6px; min-height: 1.2em; }
   .txt { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 16px; }
+  /* iOS sizes date inputs from their own content and ignores width:100% unless appearance is reset */
+  input[type="date"].txt { -webkit-appearance: none; appearance: none; display: block; max-width: 100%; min-width: 0; line-height: 1.25; color: var(--ink); }
+  input[type="date"].txt::-webkit-date-and-time-value { text-align: left; margin: 0; }
+  input[type="date"].txt::-webkit-calendar-picker-indicator { margin-left: auto; opacity: .6; }
   .choices { display: flex; flex-wrap: wrap; gap: 8px; }
   .choices button { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 500; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
   .choices button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
@@ -484,6 +521,14 @@
   .short label { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .actions { display: flex; gap: 10px; margin-top: 20px; }
+  #sheet { padding-bottom: 0; height: var(--sheet-h); }
+  #sheet > .actions {
+    position: sticky; bottom: 0; z-index: 3; margin: 18px -18px 0;
+    padding: 11px 18px calc(11px + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--line);
+  }
+  body.kb #sheet > .actions { padding-bottom: 11px; }
+  .nw { white-space: nowrap; }
   .btn { flex: 1; padding: 13px; border-radius: 12px; font-weight: 600; font-size: 15px; text-align: center; }
   .btn.primary { background: var(--accent); color: var(--accent-ink); }
   .btn.ghost { background: var(--surface-2); color: var(--ink-2); }
@@ -565,6 +610,9 @@
     <div class="card" id="people"></div>
     <div class="hint" id="settleHint" style="margin: 8px 4px 0"></div>
 
+    <div class="section-h"><h2 data-i="atTripEnd"></h2></div>
+    <div class="card" id="settle"></div>
+
     <div class="section-h"><h2 data-i="spentOn"></h2><span class="hint" id="catTotalCount"></span></div>
     <div class="card cats" id="cats"></div>
   </main>
@@ -578,12 +626,35 @@
     <div id="entries"></div>
   </main>
 
-  <!-- ===== people ===== -->
-  <main id="v-people" class="view">
-    <div class="section-h"><h2 data-i="members"></h2></div>
-    <div class="card" id="peopleDetail"></div>
-    <div class="section-h"><h2 data-i="atTripEnd"></h2></div>
-    <div class="card" id="settle"></div>
+  <!-- ===== my slice ===== -->
+  <main id="v-mine" class="view">
+    <button class="fundlink" id="fundLink"><span data-i="backToFund"></span><b class="num" id="fundLinkBal">0</b><span class="chev">&#8250;</span></button>
+    <div class="card" id="mePickCard" style="display:none">
+      <div class="set">
+        <h3 data-i="meIs"></h3>
+        <p data-i="meHint"></p>
+        <div class="choices" id="mePick"></div>
+      </div>
+    </div>
+
+    <section class="hero mine">
+      <div class="lbl"><span data-i="myTripTotal"></span></div>
+      <div class="big num"><span id="myTotal">0</span> <small class="cc"></small></div>
+      <div class="thb num">&#8776; <span id="myTotalTHB">0</span> THB</div>
+      <div class="split">
+        <div class="row num"><span data-i="myShare"></span><b id="myShareV">0</b></div>
+        <div class="row num"><span data-i="myOwn"></span><b id="myOwnV">0</b></div>
+        <div class="row num" id="mySrcRow" style="display:none"><span data-i="paidWith"></span><b><span data-i="srcCash"></span> <span id="mySrcCash">0</span> · <span data-i="srcCard"></span> <span id="mySrcCard">0</span></b></div>
+      </div>
+    </section>
+    <p class="mine-note" id="mineNote"></p>
+    <p class="mine-note" id="minePrivate"></p>
+
+    <div class="section-h" id="myCatHead"><h2 data-i="myByCat"></h2><span class="hint" id="myCatCount"></span></div>
+    <div class="card cats" id="myCats"></div>
+
+    <div class="section-h"><h2 data-i="myEntries"></h2><button class="chip" id="mineSelectBtn"></button></div>
+    <div id="mineEntries"></div>
   </main>
 
   <!-- ===== settings ===== -->
@@ -600,6 +671,11 @@
         <div class="actions" style="margin-top:10px">
           <button class="btn ghost small" id="addMember" data-i="addMember"></button>
         </div>
+      </div>
+      <div class="set">
+        <h3 data-i="meIs"></h3>
+        <p data-i="meHint"></p>
+        <div class="choices" id="meSeg"></div>
       </div>
       <div class="set">
         <h3 data-i="baseCur"></h3>
@@ -643,7 +719,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v7.7</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v8.0</p>
   </main>
 </div>
 
@@ -652,7 +728,7 @@
     <button data-v="sum" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V10M10 19V5M16 19v-7M22 19H2"/></svg><span data-i="navSum"></span></button>
     <button data-v="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span data-i="navList"></span></button>
     <button class="fab" id="fab" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-    <button data-v="people"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c3 .2 5.5 2.3 5.5 5.8"/></svg><span data-i="navPeople"></span></button>
+    <button data-v="mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12V3M12 12l7.8 4.5"/></svg><span data-i="navMine"></span></button>
     <button data-v="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i="navSet"></span></button>
   </div>
 </nav>
@@ -794,6 +870,7 @@
 </div>
 
 <div class="selbar" id="selbar"><span class="c" id="selCount"></span><button class="btn danger" id="selDelete"></button></div>
+<div class="selbar" id="mineSelbar"><span class="c" id="mineSelCount"></span><button class="btn danger" id="mineSelDelete"></button></div>
 
 <div class="toast" id="toast"></div>
 
@@ -812,6 +889,7 @@
     { id: 'ticket', th: 'ตั๋ว/เข้าชม', en: 'Tickets', icon: 'M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a2 2 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a2 2 0 0 0 0-6M9 5v14' },
     { id: 'activity', th: 'กิจกรรม', en: 'Activities', icon: 'M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
     { id: 'shop', th: 'ของฝาก', en: 'Souvenirs', icon: 'M6 7h12l1 14H5zM9 7V5a3 3 0 0 1 6 0v2' },
+    { id: 'shopping', th: 'ช็อปปิ้ง', en: 'Shopping', mine: true, icon: 'M3 4h2l2.3 10.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H6M9.5 20.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2M17.5 20.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2' },
     { id: 'other', th: 'อื่น ๆ', en: 'Other', icon: 'M12 5v.01M12 12v.01M12 19v.01' }
   ];
   const DEPOSIT_ICON = 'M12 3v18M6 9l6-6 6 6';
@@ -853,13 +931,13 @@
       histMeta: (d, n, v) => `${d} · ${n} รายการ · ใช้รวม ${v}`, histRestore: 'กู้คืน', histDelete: 'ลบ',
       histRestoreConfirm: (name) => `กู้คืน "${name}" มาเป็นทริปปัจจุบัน? ทริปที่ใช้อยู่จะถูกเก็บเข้าประวัติแทน`,
       histDeleteConfirm: (name) => `ลบ "${name}" ออกจากประวัติถาวร? กู้คืนไม่ได้`, histRestored: 'กู้คืนทริปแล้ว', histDeleted: 'ลบออกจากประวัติแล้ว', homeHint: 'เปิดหน้านี้ใน Safari/Chrome แล้วเลือก "เพิ่มไปยังหน้าจอโฮม" จะได้ไอคอนแอปบนมือถือ',
-      navSum: 'สรุป', navList: 'รายการ', navPeople: 'คน', navSet: 'ตั้งค่า',
+      navSum: 'สรุป', navList: 'รายการ', navSet: 'ตั้งค่า',
       addEntry: 'เพิ่มรายการ', editEntry: 'แก้ไขรายการ', typeExpense: 'จ่าย', typeDeposit: 'รับ', amount: 'จำนวนเงิน', note: 'รายละเอียด',
       notePhExp: 'เช่น ราเมงกลางวัน, ค่าน้ำมัน, ตั๋ว Alpine Route', notePhDep: 'เช่น รับเงินก่อนออกเดินทาง, รับเพิ่มรอบ 2',
       srcLabel: 'แหล่งเงิน', srcCash: 'เงินสด', srcCard: 'บัตร', srcRemaining: 'คงเหลือ',
       category: 'หมวด', paidBy: 'ใครจ่าย', paidByHint: 'ถ้าเพื่อนสำรองจ่ายเอง เลือกชื่อคนนั้น ระบบจะคิดคืนให้ตอนปิดทริป', splitAmong: 'หารกัน', depositBy: 'รับจากใคร', date: 'วันที่',
       delete: 'ลบ', cancel: 'ยกเลิก', save: 'บันทึก', undo: 'เลิกทำ', fund: 'กองกลาง', everyone: 'ทุกคน', shortTitle: (bal, short) => `กองกลางเหลือ ${bal} ไม่พอ ขาดอีก ${short}`, shortNone: 'กองกลางพอจ่าย แต่มีคนสำรองจ่ายบางส่วน', advBy: 'ใครสำรองจ่ายส่วนที่ขาด', advAmt: 'ยอดที่สำรองจ่าย', fundPart: 'ส่วนที่กองจ่าย', advHintOn: (n, v) => `${n} สำรอง ${v} จะได้คืนตอนปิดทริป`, advHintOff: 'ถ้าไม่เลือกใคร จะถือว่ากองกลางจ่ายทั้งหมด (ยอดกองติดลบ)', fromFundPlus: (f, n, v) => `กอง ${f} + ${n} สำรอง ${v}`, sumAdvancedPart: (n, v) => `(${n} สำรอง ${v})`, everyoneHint: (n) => `บันทึกแยกเป็นรายการของแต่ละคน ${n} คน ยอดเท่ากัน`, depositedAllToast: (v, n) => `รับ ${v} จากทุกคน (${n} รายการ) แล้ว`,
-      getBack: 'ได้คืน', payMore: 'ต้องจ่ายเพิ่ม', even: '', net: 'สุทธิ',
+      getBack: 'ได้คืน', even: '', net: 'สุทธิ',
       metaIn: 'รับ', metaPaid: 'สำรองจ่าย', metaShare: 'ส่วนที่ต้องออก',
       settleLine: (rf, col, bal) => `ปิดทริป: กองคืนรวม ${rf} · เก็บเพิ่มรวม ${col} · เหลือในกอง ${bal}`,
       noEntriesYet: 'ยังไม่มีรายการ กดปุ่ม + เพื่อเริ่มบันทึก', nExpenses: (n) => `${n} รายการ`, noExpenses: 'ยังไม่มีค่าใช้จ่าย',
@@ -880,7 +958,15 @@
       sumAll: 'รายการทั้งหมด', sumDaySpent: (v) => `ใช้ไป ${v}`, sumAdvanced: (n) => `(${n} สำรอง)`, summaryCopied: 'คัดลอกสรุปแล้ว',
       firstRun: 'เริ่มจากตั้งชื่อทริป สมาชิก และสกุลเงิน แล้วค่อยกด + เพื่อบันทึก',
       months: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'], days: ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'],
-      fmtDate: (D, d, M) => `${D} ${d} ${M}`, langBtn: 'ไทย'
+      fmtDate: (D, d, M) => `${D} ${d} ${M}`, langBtn: 'ไทย',
+      navMine: 'ของฉัน', myTripTotal: 'ทริปนี้ฉันใช้ไป', myShare: 'ส่วนแบ่งค่าใช้จ่ายกลุ่ม', myOwn: 'ส่วนตัว',
+      myByCat: 'แยกตามหมวด', myEntries: 'รายการส่วนตัว', paidWith: 'จ่ายด้วย', backToFund: 'กองกลางทริป',
+      mineNote: 'ส่วนแบ่งค่าใช้จ่ายกลุ่ม = ส่วนที่ต้องออกจริง ไม่ใช่เงินที่จ่ายเข้ากอง (ที่จ่ายเกินได้คืนตอนปิดทริป)',
+      minePrivate: 'หน้านี้อยู่ในเครื่องนี้เท่านั้น ไม่ถูกส่งไปในสรุปหรือรูปที่แชร์ให้เพื่อน',
+      meIs: 'ฉันคือ', meHint: 'เลือกว่าเราเป็นใครในกลุ่ม ใช้คำนวณหน้า "ของฉัน" เท่านั้น ไม่กระทบการหารเงินของกลุ่ม',
+      meNotSet: 'เลือกก่อนว่าเราเป็นใครในกลุ่ม แล้วจะคำนวณส่วนแบ่งค่าใช้จ่ายกลุ่มให้',
+      mineEmpty: 'ยังไม่มีรายการส่วนตัว', mineEmptyHint: 'กดปุ่ม + ในหน้านี้เพื่อบันทึกของที่จ่ายเอง ไม่ผ่านกองกลาง',
+      addMine: 'รายการส่วนตัว', editMine: 'แก้ไขรายการส่วนตัว', notePhMine: 'เช่น ของฝากแม่, กาแฟ'
     },
     en: {
       appName: 'PiePot', balance: 'Fund balance', fundIn: 'Chip In', fundOut: 'Paid from fund',
@@ -905,16 +991,16 @@
       histMeta: (d, n, v) => `${d} · ${n} entries · spent ${v}`, histRestore: 'Restore', histDelete: 'Delete',
       histRestoreConfirm: (name) => `Restore "${name}" as the current trip? The trip you're on now is saved to history instead`,
       histDeleteConfirm: (name) => `Delete "${name}" from history permanently? This can't be undone`, histRestored: 'Trip restored', histDeleted: 'Removed from history', homeHint: 'Open this page in Safari/Chrome and choose "Add to Home Screen" to get an app icon',
-      navSum: 'Summary', navList: 'Entries', navPeople: 'People', navSet: 'Settings',
+      navSum: 'Summary', navList: 'Entries', navSet: 'Settings',
       addEntry: 'New entry', editEntry: 'Edit entry', typeExpense: 'Expense', typeDeposit: 'Chip In', amount: 'Amount', note: 'Description',
       notePhExp: 'e.g. Ramen lunch, fuel, Alpine Route tickets', notePhDep: 'e.g. Chip-in before departure, top-up #2',
       srcLabel: 'Source', srcCash: 'Cash', srcCard: 'Card', srcRemaining: 'Remaining',
       category: 'Category', paidBy: 'Paid by', paidByHint: 'If a friend paid out of pocket, pick their name — they cash out at trip end', splitAmong: 'Split among', depositBy: 'Who chipped in', date: 'Date',
       delete: 'Delete', cancel: 'Cancel', save: 'Save', undo: 'Undo', fund: 'Fund', everyone: 'All', shortTitle: (bal, short) => `Fund has only ${bal} — short by ${short}`, shortNone: 'Fund can cover it, but someone advances part', advBy: 'Who advances the shortfall', advAmt: 'Amount advanced', fundPart: 'Paid by fund', advHintOn: (n, v) => `${n} advances ${v}, cashes out at trip end`, advHintOff: 'If no one is picked, the fund pays it all (balance goes negative)', fromFundPlus: (f, n, v) => `Fund ${f} + ${n} advanced ${v}`, sumAdvancedPart: (n, v) => `(${n} advanced ${v})`, everyoneHint: (n) => `Saved as ${n} separate entries, one per person, same amount`, depositedAllToast: (v, n) => `Chipped in ${v} from everyone (${n} entries)`,
-      getBack: 'Cash Out', payMore: 'owes', even: '', net: 'net',
+      getBack: 'Cash Out', even: '', net: 'net',
       metaIn: 'Chipped in', metaPaid: 'advanced', metaShare: 'share',
       settleLine: (rf, col, bal) => `Trip end: cash out ${rf} · collect ${col} · left in fund ${bal}`,
-      noEntriesYet: 'No entries yet — tap + to start', nExpenses: (n) => `${n} entries`, noExpenses: 'No expenses yet',
+      noEntriesYet: 'No entries yet — tap + to start', nExpenses: (n) => `${n} ${n === 1 ? 'entry' : 'entries'}`, noExpenses: 'No expenses yet',
       paysIn: (n) => `${n} pays the fund`, refundTo: (n) => `Cash out to ${n}`, allEven: 'Everyone is even — nothing to transfer',
       all: 'All', emptyList: 'No entries yet', emptyListHint: 'Tap + below to record the first one', daySpent: 'Spent',
       depositDefault: 'Chip In', putIn: (n) => `${n} chipped in`, fromFund: 'From fund', advanced: (n) => `${n} advanced`,
@@ -932,7 +1018,15 @@
       sumAll: 'All entries', sumDaySpent: (v) => `spent ${v}`, sumAdvanced: (n) => `(${n} advanced)`, summaryCopied: 'Summary copied',
       firstRun: 'Start with the trip name, members and currency, then tap + to record',
       months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      fmtDate: (D, d, M) => `${D} ${d} ${M}`, langBtn: 'EN'
+      fmtDate: (D, d, M) => `${D} ${d} ${M}`, langBtn: 'EN',
+      navMine: 'My Slice', myTripTotal: 'My trip total', myShare: 'My share of group spend', myOwn: 'Outside the pot',
+      myByCat: 'By category', myEntries: 'Outside the pot', paidWith: 'Paid with', backToFund: 'Trip fund',
+      mineNote: 'Your share of group spend is what the trip costs you — not what you chipped in (extra comes back at trip end)',
+      minePrivate: 'This page stays on this device — never part of the summary or image you share',
+      meIs: 'I am', meHint: 'Pick who you are in the group. Used only for the My Slice page — it never changes how money is split',
+      meNotSet: 'Pick who you are in the group and your share of group spend shows up here',
+      mineEmpty: 'Nothing outside the pot yet', mineEmptyHint: 'Tap + on this page to log what you paid for yourself, outside the pot',
+      addMine: 'Outside the pot', editMine: 'Edit Outside the pot entry', notePhMine: 'e.g. gift for mum, coffee'
     }
   };
   let T = I18N.th;
@@ -949,7 +1043,8 @@
     base: 'JPY',
     rates: { JPY: 23.0, HKD: 4.6, CNY: 5.0, USD: 36.0 }, cur: {}, // THB per 100 JPY, per 1 HKD/CNY/USD
     members: ['A', 'B'].map((n, i) => ({ id: 'm' + (i + 1), name: n, color: COLORS[i] })),
-    entries: []
+    entries: [],
+    mine: [], meId: null
   });
   let S;
   function load() {
@@ -969,6 +1064,10 @@
     // make sure every member has a distinct colour (older data could end up with duplicates)
     const usedC = new Set();
     o.members.forEach(m => { if (!COLORS.includes(m.color) || usedC.has(m.color)) m.color = COLORS.find(c => !usedC.has(c)) || m.color; usedC.add(m.color); });
+    if (!Array.isArray(o.mine)) o.mine = [];
+    o.mine = o.mine.filter(e => e && e.id && e.orig != null);
+    o.mine.forEach(e => { if (!e.cur) e.cur = 'JPY'; if (!e.cat) e.cat = 'other'; if (e.src !== 'card') e.src = 'cash'; if (!e.date) e.date = '2000-01-01'; });
+    if (o.meId && !o.members.some(m => m.id === o.meId)) o.meId = null;
     delete o.rate;
     return o;
   }
@@ -1043,9 +1142,10 @@
     r.hasCard = S.entries.some(e => e.src === 'card');
     r.balance = r.fundIn - r.fundOut;
     S.members.forEach(m => { const p = r.per[m.id]; p.net = p.in + p.paid - p.share; });
+    r.myShare = (S.meId && r.per[S.meId]) ? r.per[S.meId].share : 0;
     return r;
   }
-  window.__kk = { calc, get: () => S, setLang: (l) => setLang(l) };
+  window.__kk = { calc, get: () => S, setLang: (l) => setLang(l), calcMine: () => calcMine() };
 
   // ---------- language ----------
   function applyLang() {
@@ -1091,7 +1191,7 @@
     hero.classList.toggle('neg', r.balance < 0);
     hero.classList.toggle('low', r.balance >= 0 && r.fundIn > 0 && pct < 15);
 
-    renderSummary(r); renderPeople(r); renderEntries(); renderSettings(); renderHistory();
+    renderSummary(r); renderEntries(); renderMine(r); renderSettings(); renderHistory();
   }
 
   function renderSummary(r) {
@@ -1102,35 +1202,29 @@
     $('people').innerHTML = S.members.map(m => {
       const p = r.per[m.id];
       const cls = p.net > 0.5 ? 'pos' : p.net < -0.5 ? 'negv' : '';
-      const st = p.net > 0.5 ? t('getBack') : p.net < -0.5 ? t('payMore') : '';
-      return `<div class="person"><div class="avatar" style="background:${avc(m.color)}">${esc(m.name.slice(0, 2))}</div>
-        <div><div class="name">${esc(m.name)}</div><div class="meta num">${t('metaIn')} ${money(p.in)}${p.paid ? ` · ${t('metaPaid')} ${money(p.paid)}` : ''} · ${t('metaShare')} ${money(p.share)}</div></div>
-        <div class="net num ${cls}"><span class="t">${st}</span>${fmtSigned(p.net)}</div></div>`;
+      return `<div class="person slice"><div class="avatar" style="background:${avc(m.color)}">${esc(m.name.slice(0, 2))}</div>
+        <div>
+          <div class="slice-hd"><span class="name">${esc(m.name)}</span><span class="net num ${cls}"><span class="t">${t('net')}</span>${fmtSigned(p.net)}</span></div>
+          <div class="meta num">${t('metaIn')} <span class="nw">${money(p.in)}</span></div>
+          <div class="meta num">${t('metaPaid')} <span class="nw">${money(p.paid)}</span></div>
+          <div class="meta num">${t('metaShare')} <span class="nw">${money(p.share)}</span> <span class="nw">${approx(p.share)}</span></div>
+        </div></div>`;
     }).join('');
     const refund = S.members.reduce((a, m) => a + Math.max(0, r.per[m.id].net), 0);
     const collect = S.members.reduce((a, m) => a + Math.max(0, -r.per[m.id].net), 0);
     $('settleHint').textContent = r.spent || r.fundIn ? t('settleLine', money(refund), money(collect), money(r.balance)) : t('noEntriesYet');
-
-    const cats = CATS.map(c => ({ ...c, a: r.byCat[c.id] || 0 })).filter(c => c.a > 0).sort((a, b) => b.a - a.a);
-    const max = cats.length ? cats[0].a : 1;
-    $('catTotalCount').textContent = t('nExpenses', S.entries.filter(e => e.type === 'expense').length);
-    $('cats').innerHTML = cats.length ? cats.map(c => `<div class="cat"><span class="n">${catName(c)} <span class="hint">${Math.round(c.a / r.spent * 100)}%</span></span><span class="a num">${money(c.a)}</span><div class="bar"><i style="width:${c.a / max * 100}%"></i></div></div>`).join('')
-      : `<div class="empty" style="padding:20px">${t('noExpenses')}</div>`;
-  }
-
-  function renderPeople(r) {
-    $('peopleDetail').innerHTML = S.members.map(m => {
-      const p = r.per[m.id];
-      return `<div class="person"><div class="avatar" style="background:${avc(m.color)}">${esc(m.name.slice(0, 2))}</div>
-        <div><div class="name">${esc(m.name)}</div><div class="meta num">${t('metaIn')} ${money(p.in)} · ${t('metaPaid')} ${money(p.paid)}</div><div class="meta num">${t('metaShare')} ${money(p.share)} ${approx(p.share)}</div></div>
-        <div class="net num ${p.net > 0.5 ? 'pos' : p.net < -0.5 ? 'negv' : ''}"><span class="t">${t('net')}</span>${fmtSigned(p.net)}</div></div>`;
-    }).join('');
 
     const rows = S.members.map(m => ({ m, net: r.per[m.id].net })).filter(x => Math.abs(x.net) > 0.5).sort((a, b) => a.net - b.net);
     $('settle').innerHTML = rows.length ? rows.map(x => `<div class="person"><div class="avatar" style="background:${avc(x.m.color)}">${esc(x.m.name.slice(0, 2))}</div>
         <div><div class="name">${x.net < 0 ? t('paysIn', esc(x.m.name)) : t('refundTo', esc(x.m.name))}</div><div class="meta num">${approx(Math.abs(x.net))}</div></div>
         <div class="net num ${x.net < 0 ? 'negv' : 'pos'}">${money(Math.abs(x.net))}</div></div>`).join('')
       : `<div class="empty" style="padding:24px">${t('allEven')}</div>`;
+
+    const cats = CATS.map(c => ({ ...c, a: r.byCat[c.id] || 0 })).filter(c => c.a > 0).sort((a, b) => b.a - a.a);
+    const max = cats.length ? cats[0].a : 1;
+    $('catTotalCount').textContent = t('nExpenses', S.entries.filter(e => e.type === 'expense').length);
+    $('cats').innerHTML = cats.length ? cats.map(c => `<div class="cat"><span class="n">${catName(c)} <span class="hint">${Math.round(c.a / r.spent * 100)}%</span></span><span class="a num">${money(c.a)}</span><div class="bar"><i style="width:${c.a / max * 100}%"></i></div></div>`).join('')
+      : `<div class="empty" style="padding:20px">${t('noExpenses')}</div>`;
   }
 
   let filter = 'all';
@@ -1258,6 +1352,92 @@
     return `<button class="entry ${e.paidBy === 'fund' && e.src === 'card' ? 'src-card' : e.paidBy === 'fund' && e.src === 'cash' ? 'src-cash' : ''}" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(cat.icon)}</span>`}<span><span class="t">${esc(e.note || catName(cat))}</span><span class="m">${who} · ${split}${e.paidBy === 'fund' && e.src ? ` <span class="pill src-${e.src}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span>` : ''}${e.paidBy !== 'fund' || ad > 0 ? ` <span class="pill warn">${t('reimburse')}</span>` : ''}</span></span><span class="amt num">−${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
   }
 
+  // ---------- my slice (personal spending, never part of the fund) ----------
+  function calcMine() {
+    const r = { total: 0, byCat: {}, bySrc: { cash: 0, card: 0 }, hasCard: false, n: 0 };
+    (S.mine || []).forEach(e => {
+      const a = amt(e);
+      r.total += a; r.n++;
+      r.byCat[e.cat] = (r.byCat[e.cat] || 0) + a;
+      r.bySrc[e.src === 'card' ? 'card' : 'cash'] += a;
+      if (e.src === 'card') r.hasCard = true;
+    });
+    return r;
+  }
+  let mineSel = false;
+  const mineIds = new Set();
+  function renderMine(r) {
+    const m = calcMine();
+    const hasMe = !!(S.meId && member(S.meId));
+    const share = hasMe ? r.myShare : 0;
+    const total = share + m.total;
+    $('myTotal').textContent = fmt(total);
+    $('myTotalTHB').textContent = fmtTHB(total);
+    $('myShareV').textContent = hasMe ? money(share) : '—';
+    $('myOwnV').textContent = money(m.total);
+    $('mySrcRow').style.display = m.hasCard ? '' : 'none';
+    if (m.hasCard) { $('mySrcCash').textContent = fmt(m.bySrc.cash); $('mySrcCard').textContent = fmt(m.bySrc.card); }
+    $('fundLinkBal').textContent = money(r.balance);
+    $('fundLink').onclick = () => showView('sum');
+    $('mineNote').textContent = hasMe ? t('mineNote') : t('meNotSet');
+    $('minePrivate').textContent = t('minePrivate');
+    $('mePickCard').style.display = hasMe ? 'none' : '';
+    if (!hasMe) renderMePick($('mePick'));
+    const cats = CATS.map(c => ({ ...c, a: m.byCat[c.id] || 0 })).filter(c => c.a > 0).sort((a, b) => b.a - a.a);
+    const max = cats.length ? cats[0].a : 1;
+    $('myCatCount').textContent = t('nExpenses', m.n);
+    $('myCatHead').style.display = cats.length ? '' : 'none';
+    $('myCats').style.display = cats.length ? '' : 'none';
+    $('myCats').innerHTML = cats.map(c => `<div class="cat"><span class="n">${catName(c)} <span class="hint">${Math.round(c.a / m.total * 100)}%</span></span><span class="a num">${money(c.a)}</span><div class="bar"><i style="width:${c.a / max * 100}%"></i></div></div>`).join('');
+    renderMineList();
+  }
+  function mineRow(e) {
+    const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
+    const src = e.src === 'card' ? 'src-card' : 'src-cash';
+    return `<button class="entry ${src}" data-id="${e.id}">${mineSel ? `<span class="ic ck ${mineIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(cat.icon)}</span>`}<span><span class="t">${esc(e.note || catName(cat))}</span><span class="m">${catName(cat)} <span class="pill src-${e.src === 'card' ? 'card' : 'cash'}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span></span></span><span class="amt num">−${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+  }
+  function deleteMine(ids) {
+    const removed = [];
+    S.mine = (S.mine || []).filter(e => { if (ids.has(e.id)) { removed.push(e); return false; } return true; });
+    if (!removed.length) return;
+    save(); renderAll();
+    toast(removed.length > 1 ? t('deletedNToast', removed.length) : t('deletedToast'), () => { S.mine.push(...removed); save(); renderAll(); });
+  }
+  function renderMineList() {
+    $('mineSelectBtn').textContent = mineSel ? t('cancel') : t('select');
+    $('mineSelectBtn').classList.toggle('on', mineSel);
+    $('mineSelbar').classList.toggle('on', mineSel);
+    $('mineSelCount').textContent = t('selCount', mineIds.size);
+    $('mineSelDelete').textContent = t('deleteSel', mineIds.size);
+    $('mineSelDelete').disabled = !mineIds.size;
+    $('mineSelectBtn').style.display = (S.mine || []).length ? '' : 'none';
+    const list = (S.mine || []).slice().sort((a, b) => b.date.localeCompare(a.date) || (b.ts || 0) - (a.ts || 0));
+    if (!list.length) { $('mineEntries').innerHTML = `<div class="empty"><b>${t('mineEmpty')}</b>${t('mineEmptyHint')}</div>`; return; }
+    const days = {};
+    list.forEach(e => (days[e.date] = days[e.date] || []).push(e));
+    $('mineEntries').innerHTML = Object.keys(days).sort().reverse().map(d => {
+      const es = days[d];
+      const spent = es.reduce((a, e) => a + amt(e), 0);
+      const rows = es.map(e => mineSel ? mineRow(e) : `<div class="swipe-wrap"><button class="swipe-del" data-del="${e.id}">${t('delete')}</button>${mineRow(e)}</div>`).join('');
+      return `<div class="day"><div class="day-h"><span>${niceDate(d)}</span><span class="num">${t('daySpent')} ${money(spent)}</span></div><div class="card">${rows}</div></div>`;
+    }).join('');
+    $('mineEntries').querySelectorAll('.entry').forEach(b => b.onclick = () => {
+      const w = b.closest('.swipe-wrap');
+      if (w && (w.classList.contains('sw-open') || w.dataset.swiped)) { closeSw(); return; }
+      if (mineSel) { const id = b.dataset.id; if (mineIds.has(id)) mineIds.delete(id); else mineIds.add(id); renderMineList(); return; }
+      openSheet(b.dataset.id, 'mine');
+    });
+    $('mineEntries').querySelectorAll('.swipe-del').forEach(d => d.onclick = () => { closeSw(); deleteMine(new Set(d.dataset.del.split(','))); });
+    if (!mineSel) $('mineEntries').querySelectorAll('.swipe-wrap').forEach(bindSwipe);
+  }
+  $('mineSelectBtn').onclick = () => { mineSel = !mineSel; mineIds.clear(); closeSw(); renderMineList(); };
+  $('mineSelDelete').onclick = () => {
+    if (!mineIds.size) return;
+    if (!confirm(t('deleteNConfirm', mineIds.size))) return;
+    const ids = new Set(mineIds); mineSel = false; mineIds.clear();
+    deleteMine(ids);
+  };
+
   function renderSettings() {
     if (document.activeElement !== $('setTrip')) $('setTrip').value = S.trip;
     $('rateLeft').textContent = `${(curDef(S.base) || {}).per || 1} ${S.base}`;
@@ -1271,6 +1451,16 @@
     box.innerHTML = S.members.map((m, i) => `<div class="m"><div class="avatar" style="background:${avc(m.color)}">${esc(m.name.slice(0, 2))}</div><input class="txt" data-i-idx="${i}" value="${esc(m.name)}" maxlength="12"><button class="rm" data-i-idx="${i}" aria-label="${esc(t('removeAria', m.name))}" ${used.has(m.id) || S.members.length <= 2 ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('');
     box.querySelectorAll('input').forEach(inp => inp.oninput = () => { const i = +inp.dataset.iIdx; S.members[i].name = inp.value.trim() || String.fromCharCode(65 + i); inp.previousElementSibling.textContent = S.members[i].name.slice(0, 2); save(); renderAll(); });
     box.querySelectorAll('.rm').forEach(b => b.onclick = () => removeMember(+b.dataset.iIdx));
+    renderMePick($('meSeg'));
+  }
+  function renderMePick(box) {
+    if (!box) return;
+    const dot = (m) => `<span class="dot" style="background:${avc(m.color)}"></span>`;
+    box.innerHTML = S.members.map(m => `<button data-me="${m.id}" class="${S.meId === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
+    box.querySelectorAll('button[data-me]').forEach(b => b.onclick = () => {
+      S.meId = S.meId === b.dataset.me ? null : b.dataset.me;
+      save(); renderAll();
+    });
   }
   function usedMembers() {
     const u = new Set();
@@ -1282,8 +1472,10 @@
     if (!m) return;
     if (usedMembers().has(m.id)) { toast(t('memberHasEntries', m.name)); return; }
     if (S.members.length <= 2) { toast(t('minMembers')); return; }
+    const wasMe = S.meId === m.id;
+    if (wasMe) S.meId = null;
     S.members.splice(i, 1); save(); renderAll();
-    toast(t('removed', m.name), () => { S.members.splice(i, 0, m); save(); renderAll(); });
+    toast(t('removed', m.name), () => { S.members.splice(i, 0, m); if (wasMe) S.meId = m.id; save(); renderAll(); });
   }
   $('addMember').onclick = () => {
     if (S.members.length >= 12) { toast(t('maxMembers')); return; }
@@ -1307,7 +1499,7 @@
     $('addCurBtn').onclick = openCurSheet;
   }
   // ---------- custom currencies ----------
-  function curUsed(c) { return S.base === c || S.entries.some(e => (e.cur || 'JPY') === c); }
+  function curUsed(c) { return S.base === c || S.entries.some(e => (e.cur || 'JPY') === c) || (S.mine || []).some(e => (e.cur || 'JPY') === c); }
   function renderCurMine() {
     const codes = Object.keys(S.cur || {});
     $('curMineBlock').style.display = codes.length ? '' : 'none';
@@ -1322,7 +1514,7 @@
   function openCurSheet() {
     $('curCode').value = ''; $('curPer').value = '1'; $('curRate').value = ''; $('curCodeEcho').textContent = '—';
     renderCurMine();
-    $('scrim').classList.add('on'); $('curSheet').classList.add('on');
+    showSheet('curSheet');
     setTimeout(() => $('curCode').focus(), 60);
   }
   $('curCode').oninput = () => {
@@ -1347,7 +1539,14 @@
   $('explainBtn').onclick = () => toast(t('explain'));
 
   // ---------- views ----------
+  let curView = 'sum';
   function showView(v) {
+    curView = v;
+    if (selMode) { selMode = false; selIds.clear(); }
+    if (mineSel) { mineSel = false; mineIds.clear(); }
+    closeSw();
+    document.body.classList.toggle('v-mine', v === 'mine');
+    renderEntries(); renderMineList();
     document.querySelectorAll('.view').forEach(el => el.classList.toggle('on', el.id === 'v-' + v));
     document.querySelectorAll('.nav [data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === v));
     window.scrollTo({ top: 0 });
@@ -1355,8 +1554,10 @@
   document.querySelectorAll('.nav [data-v]').forEach(b => b.onclick = () => showView(b.dataset.v));
 
   // ---------- sheet / form ----------
-  const F = { id: null, type: 'expense', cur: 'JPY', cat: 'food', paidBy: 'fund', split: [], by: null, advBy: null, advOrig: null, advManual: false };
-  function openSheet(id) {
+  const F = { id: null, mode: 'fund', type: 'expense', cur: 'JPY', cat: 'food', paidBy: 'fund', split: [], by: null, advBy: null, advOrig: null, advManual: false };
+  function openSheet(id, mode) {
+    F.mode = mode === 'mine' ? 'mine' : 'fund';
+    if (F.mode === 'mine') return openMineSheet(id);
     const e = id ? S.entries.find(x => x.id === id) : null;
     F.id = e ? e.id : null;
     F.type = e ? e.type : 'expense';
@@ -1375,25 +1576,91 @@
     $('fDate').value = e ? e.date : today();
     $('fDelete').style.display = e ? '' : 'none';
     renderForm();
-    $('scrim').classList.add('on'); $('sheet').classList.add('on');
+    showSheet('sheet');
     if (!e) setTimeout(() => $('fAmount').focus(), 300);
   }
-  function closeSheet() { $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); }
-  $('fab').onclick = () => openSheet(null);
+  function openMineSheet(id) {
+    const e = id ? (S.mine || []).find(x => x.id === id) : null;
+    F.id = e ? e.id : null;
+    F.type = 'expense';
+    F.cur = e && e.cur ? e.cur : S.base;
+    F.cat = e && e.cat ? e.cat : 'shop';
+    F.paidBy = 'fund'; F.split = []; F.by = null;
+    F.advBy = null; F.advOrig = null; F.advManual = false;
+    F.src = e ? (e.src === 'card' ? 'card' : 'cash') : (S.lastSrcMine === 'card' ? 'card' : 'cash');
+    $('sheetTitle').textContent = e ? t('editMine') : t('addMine');
+    setAmt(e ? (e.orig != null ? e.orig : e.amount) : '');
+    $('fNote').value = e ? e.note || '' : '';
+    $('fDate').value = e ? e.date : today();
+    $('fDelete').style.display = e ? '' : 'none';
+    renderForm();
+    showSheet('sheet');
+    if (!e) setTimeout(() => $('fAmount').focus(), 300);
+  }
+  // ---------- bottom sheets: stay fixed to the visible screen when the keyboard opens ----------
+  const VV = window.visualViewport || null;
+  function fitViewport() {
+    const root = document.documentElement;
+    if (!VV) { root.style.setProperty('--vvh', window.innerHeight + 'px'); return; }
+    const kb = Math.max(0, Math.round(window.innerHeight - VV.height - VV.offsetTop));
+    root.style.setProperty('--vvh', Math.round(VV.height) + 'px');
+    root.style.setProperty('--kb', kb + 'px');
+    document.body.classList.toggle('kb', kb > 80);
+    const open = document.querySelector('.sheet.on');
+    if (open && document.activeElement && open.contains(document.activeElement)) revealIn(open, document.activeElement);
+  }
+  function revealIn(sh, el) {
+    if (!el || !el.getBoundingClientRect) return;
+    const r = el.getBoundingClientRect(), b = sh.getBoundingClientRect(), pad = 18;
+    if (r.bottom > b.bottom - pad) sh.scrollTop += r.bottom - (b.bottom - pad);
+    else if (r.top < b.top + pad) sh.scrollTop -= (b.top + pad) - r.top;
+  }
+  if (VV) { VV.addEventListener('resize', fitViewport); VV.addEventListener('scroll', fitViewport); }
+  window.addEventListener('resize', fitViewport);
+  window.addEventListener('orientationchange', () => setTimeout(fitViewport, 250));
+  fitViewport();
+  document.querySelectorAll('.sheet').forEach(sh => {
+    sh.addEventListener('focusin', (ev) => {
+      const el = ev.target;
+      if (!el || !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      setTimeout(() => revealIn(sh, el), 320);
+    });
+  });
+  let lockY = 0, scrollLocked = false;
+  function lockScroll() {
+    if (scrollLocked) return;
+    scrollLocked = true;
+    lockY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.top = -lockY + 'px';
+    document.body.classList.add('sheet-open');
+  }
+  function unlockScroll() {
+    if (!scrollLocked) return;
+    scrollLocked = false;
+    document.body.classList.remove('sheet-open');
+    document.body.style.top = '';
+    window.scrollTo(0, lockY);
+  }
+  function showSheet(id) { lockScroll(); $(id).scrollTop = 0; $('scrim').classList.add('on'); $(id).classList.add('on'); fitViewport(); }
+
+  function closeSheet() { unlockScroll(); $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); }
+  $('fab').onclick = () => openSheet(null, curView === 'mine' ? 'mine' : 'fund');
   $('scrim').onclick = closeSheet; $('fCancel').onclick = closeSheet;
 
   function renderForm() {
+    const mineMode = F.mode === 'mine';
     const isExp = F.type === 'expense';
+    $('typeSeg').style.display = mineMode ? 'none' : '';
     $('typeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === F.type));
     $('catField').style.display = isExp ? '' : 'none';
-    $('paidField').style.display = isExp ? '' : 'none';
-    $('splitField').style.display = isExp ? '' : 'none';
-    $('depField').style.display = isExp ? 'none' : '';
-    $('fNote').placeholder = isExp ? t('notePhExp') : t('notePhDep');
+    $('paidField').style.display = (isExp && !mineMode) ? '' : 'none';
+    $('splitField').style.display = (isExp && !mineMode) ? '' : 'none';
+    $('depField').style.display = (isExp || mineMode) ? 'none' : '';
+    $('fNote').placeholder = mineMode ? t('notePhMine') : isExp ? t('notePhExp') : t('notePhDep');
     const curs = [...new Set([S.base, 'THB', F.cur])];
     $('fCur').innerHTML = curs.map(c => `<button data-cur="${c}" class="${F.cur === c ? 'on' : ''}">${c}</button>`).join('');
     $('fCur').querySelectorAll('button').forEach(b => b.onclick = () => { F.cur = b.dataset.cur; renderForm(); });
-    $('fCats').innerHTML = CATS.map(c => `<button data-c="${c.id}" class="${F.cat === c.id ? 'on' : ''}">${catName(c)}</button>`).join('');
+    $('fCats').innerHTML = CATS.filter(c => !c.mine || mineMode).map(c => `<button data-c="${c.id}" class="${F.cat === c.id ? 'on' : ''}">${catName(c)}</button>`).join('');
     $('fCats').querySelectorAll('button').forEach(b => b.onclick = () => { F.cat = b.dataset.c; renderForm(); });
     const dot = (m) => `<span class="dot" style="background:${avc(m.color)}"></span>`;
     $('fPaid').innerHTML = `<button data-p="fund" class="${F.paidBy === 'fund' ? 'on' : ''}">${t('fund')}</button>` + S.members.map(m => `<button data-p="${m.id}" class="${F.paidBy === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
@@ -1404,7 +1671,7 @@
     $('fDep').innerHTML = (F.id ? '' : `<button data-d="all" class="${F.by === 'all' ? 'on' : ''}">${t('everyone')}</button>`) + S.members.map(m => `<button data-d="${m.id}" class="${F.by === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
     $('depHint').textContent = F.by === 'all' ? t('everyoneHint', S.members.length) : '';
     $('fDep').querySelectorAll('button').forEach(b => b.onclick = () => { F.by = b.dataset.d; renderForm(); });
-    $('srcField').style.display = (!isExp || F.paidBy === 'fund') ? '' : 'none';
+    $('srcField').style.display = (mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none';
     $('fSrc').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.s === F.src); b.onclick = () => { F.src = b.dataset.s; renderForm(); }; });
     updateConv();
   }
@@ -1418,7 +1685,7 @@
   function renderShort() {
     const box = $('shortBox');
     const v = amtExprVal($('fAmount').value);
-    const isFund = F.type === 'expense' && F.paidBy === 'fund';
+    const isFund = F.mode !== 'mine' && F.type === 'expense' && F.paidBy === 'fund';
     if (!isFund || !(v > 0)) { box.classList.remove('on'); return; }
     const avail = availableFund();
     const availOrig = toOrig(Math.max(0, avail), F.cur);
@@ -1488,6 +1755,20 @@
     const orig = amtExprVal($('fAmount').value);
     const amount = amountBase();
     if (!(orig > 0) || !amount) { toast(t('needAmount')); $('fAmount').focus(); return; }
+    if (F.mode === 'mine') {
+      const me = {
+        id: F.id || uid(), cur: F.cur, orig, amount: Math.round(amount * 100) / 100,
+        note: $('fNote').value.trim(), date: $('fDate').value || today(),
+        cat: F.cat, src: F.src === 'card' ? 'card' : 'cash', own: true, ts: Date.now()
+      };
+      S.lastSrcMine = me.src;
+      S.mine = S.mine || [];
+      const j = S.mine.findIndex(x => x.id === me.id);
+      if (j >= 0) { me.ts = S.mine[j].ts || me.ts; S.mine[j] = me; } else S.mine.push(me);
+      save(); closeSheet(); renderAll();
+      toast(j >= 0 ? t('edited') : t('savedToast', money(amount)));
+      return;
+    }
     if (F.type === 'expense' && !F.split.length) { toast(t('needSplit')); return; }
     const e = {
       id: F.id || uid(), type: F.type, cur: F.cur, orig, amount: Math.round(amount * 100) / 100, note: $('fNote').value.trim(), date: $('fDate').value || today(), ts: Date.now()
@@ -1511,6 +1792,14 @@
     toast(i >= 0 ? t('edited') : (F.type === 'deposit' ? t('depositedToast', money(amount)) : t('savedToast', money(amount))));
   };
   $('fDelete').onclick = () => {
+    if (F.mode === 'mine') {
+      const j = (S.mine || []).findIndex(x => x.id === F.id);
+      if (j < 0) return;
+      const gone = S.mine[j];
+      S.mine.splice(j, 1); save(); closeSheet(); renderAll();
+      toast(t('deletedToast'), () => { S.mine.push(gone); save(); renderAll(); });
+      return;
+    }
     const i = S.entries.findIndex(x => x.id === F.id);
     if (i < 0) return;
     const removed = S.entries[i];
@@ -1570,7 +1859,7 @@
     }
     $('sharePrev').innerHTML = h;
   }
-  $('shareSummary').onclick = () => { shareState = null; renderShare(); $('scrim').classList.add('on'); $('shareSheet').classList.add('on'); };
+  $('shareSummary').onclick = () => { shareState = null; renderShare(); showSheet('shareSheet'); };
   $('shareClose').onclick = closeSheet;
   $('shareCopy').onclick = () => copyText(withState(shareState || S, summaryText), t('summaryCopied'));
 
@@ -1748,11 +2037,11 @@
 
   // ---------- new trip & history ----------
   const snapshot = () => ({ id: uid(), savedAt: Date.now(), state: JSON.parse(JSON.stringify(S)) });
-  $('newTripBtn').onclick = () => { $('ntName').value = ''; $('scrim').classList.add('on'); $('newTripSheet').classList.add('on'); };
+  $('newTripBtn').onclick = () => { $('ntName').value = ''; showSheet('newTripSheet'); };
   $('ntCancel').onclick = closeSheet;
   $('ntGo').onclick = () => {
-    if (S.entries.length || (S.trip || '').trim()) { H.unshift(snapshot()); saveHist(); }
-    S = { ...S, trip: $('ntName').value.trim(), entries: [] };
+    if (S.entries.length || (S.mine || []).length || (S.trip || '').trim()) { H.unshift(snapshot()); saveHist(); }
+    S = { ...S, trip: $('ntName').value.trim(), entries: [], mine: [] };
     save(); closeSheet(); renderAll(); showView('sum'); toast(t('newTripDone'));
   };
   function renderHistory() {
@@ -1785,7 +2074,7 @@
     if (v) {
       const h = H[+v.dataset.hView]; if (!h) return;
       shareState = migrate(JSON.parse(JSON.stringify(h.state)));
-      renderShare(); $('scrim').classList.add('on'); $('shareSheet').classList.add('on');
+      renderShare(); showSheet('shareSheet');
     }
   };
 
