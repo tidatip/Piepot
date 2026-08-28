@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Owner">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#8FD0C6">
+<meta name="theme-color" content="#517B7B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap">
 <style>
@@ -499,9 +499,6 @@
 
   .field { margin-top: 12px; }
   .field label { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; letter-spacing: .02em; }
-  .advamt-wrap { position: relative; }
-  .advamt-wrap .txt { padding-right: 54px; }
-  .advamt-cur { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--muted); pointer-events: none; }
   .amount-wrap { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: stretch; }
   .amount { width: 100%; font-size: 32px; font-weight: 600; padding: 7px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); text-align: right; }
   .cur { display: grid; grid-auto-rows: 1fr; gap: 4px; }
@@ -724,7 +721,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.1</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.2</p>
   </main>
 </div>
 
@@ -775,7 +772,7 @@
       <label data-i="advBy"></label>
       <div class="choices" id="fAdv"></div>
       <div class="row2" style="margin-top:10px">
-        <div><label data-i="advAmt"></label><div class="advamt-wrap"><input class="txt num" id="fAdvAmt" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span class="advamt-cur num" id="fAdvCur"></span></div></div>
+        <div><label data-i="advAmt"></label><input class="txt num" id="fAdvAmt" type="number" inputmode="decimal" step="0.01" min="0"></div>
         <div><label data-i="fundPart"></label><div class="txt num" id="fFundPart" style="background:var(--surface-2)"></div></div>
       </div>
       <div class="hint" id="advHint"></div>
@@ -1079,7 +1076,7 @@
     return o;
   }
   S = load();
-  function applyPalette() { document.documentElement.setAttribute('data-palette', S.palette || 'default'); const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = S.palette === 'cherry' ? '#B83A4B' : '#8FD0C6'; }
+  function applyPalette() { document.documentElement.setAttribute('data-palette', S.palette || 'default'); const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = S.palette === 'cherry' ? '#B83A4B' : '#517B7B'; }
   applyPalette();
   const HKEY = 'piepot-owner-history-v1';
   function loadHist() { try { const r = localStorage.getItem(HKEY); if (r) { const a = JSON.parse(r); if (Array.isArray(a)) return a; } } catch (e) {} return []; }
@@ -1716,18 +1713,11 @@
     const dot = (m) => `<span class="dot" style="background:${avc(m.color)}"></span>`;
     $('fAdv').innerHTML = S.members.map(m => `<button data-a="${m.id}" class="${F.advBy === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
     $('fAdv').querySelectorAll('button').forEach(b => b.onclick = () => { F.advBy = F.advBy === b.dataset.a ? null : b.dataset.a; renderShort(); });
-    $('fAdvCur').textContent = F.cur;
-    if (document.activeElement !== $('fAdvAmt')) $('fAdvAmt').value = fmtA(F.advOrig || 0, F.cur);
+    if (document.activeElement !== $('fAdvAmt')) $('fAdvAmt').value = F.advOrig;
     $('fFundPart').textContent = moneyC(Math.max(0, v - (F.advOrig || 0)), F.cur);
     $('advHint').textContent = F.advBy ? t('advHintOn', mname(F.advBy), moneyC(F.advOrig || 0, F.cur)) : t('advHintOff');
   }
-  $('fAdvAmt').oninput = () => {
-    reformatAmt('fAdvAmt', true);
-    const v = amtExprVal($('fAdvAmt').value);
-    F.advManual = true; F.advOrig = v > 0 ? v : 0;
-    renderShort();
-  };
-  $('fAdvAmt').onblur = () => { $('fAdvAmt').value = fmtA(F.advOrig || 0, F.cur); };
+  $('fAdvAmt').oninput = () => { const v = parseFloat($('fAdvAmt').value); F.advManual = true; F.advOrig = v >= 0 ? Math.round(v * 100) / 100 : 0; renderShort(); };
   $('typeSeg').querySelectorAll('button').forEach(b => b.onclick = () => { F.type = b.dataset.t; renderForm(); });
   // amount field: thousand separators + additive expressions (e.g. 1,200+350)
   function amtExprVal(raw) {
@@ -1744,12 +1734,12 @@
   }
   function fmtAmtExpr(raw) { return String(raw).split('+').map(fmtAmtPart).join('+'); }
   function setAmt(v) { $('fAmount').value = v === '' || v == null ? '' : fmtAmtExpr(String(v)); }
-  function reformatAmt(id, single) {
-    const el = $(id || 'fAmount');
+  function reformatAmt() {
+    const el = $('fAmount');
     const before = el.value;
     const caret = el.selectionStart == null ? before.length : el.selectionStart;
     const sig = before.slice(0, caret).replace(/[^\d.+]/g, '').length;
-    const after = single ? fmtAmtPart(before) : fmtAmtExpr(before);
+    const after = fmtAmtExpr(before);
     if (after === before) return;
     el.value = after;
     let seen = 0, pos = after.length;
@@ -2258,7 +2248,13 @@
     return true;
   }
 
-  const packS = () => { const o = JSON.parse(JSON.stringify(S)); delete o.tripCode; delete o.adminName; return JSON.stringify(o); };
+  // personal entries (My Slice) and "I am" never leave this device
+  const packS = () => {
+    const o = JSON.parse(JSON.stringify(S));
+    delete o.tripCode; delete o.adminName;
+    o.mine = []; o.meId = null;
+    return JSON.stringify(o);
+  };
 
   async function pushNow() {
     if (MEMBER || !S.tripCode || !db) return;
@@ -2281,8 +2277,11 @@
     try { o = JSON.parse(d.S); } catch (e) { return; }
     if (!o || !o.members || !o.entries) return;
     const lang = S.lang, pal = S.palette;
+    const keepMine = Array.isArray(S.mine) ? S.mine : [];
+    const keepMe = S.meId;
     S = migrate(o);
     S.lang = lang; S.palette = pal;
+    S.mine = keepMine; S.meId = keepMe && S.members.some(m => m.id === keepMe) ? keepMe : null;
     S.tripCode = d.__code; S.adminName = d.adminName || '';
     lastAt = d.at || Date.now();
     applyPalette(); applyLang(); renderAll(); updateBar();
