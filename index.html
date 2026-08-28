@@ -507,6 +507,17 @@
   .toast.on { display: block; }
   .toast button { margin-left: 12px; color: var(--accent); font-weight: 700; }
   :root[data-theme="dark"] .toast button { color: var(--accent); }
+  .seg.curwrap { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .seg.curwrap button { padding: 9px 2px; font-size: 13.5px; }
+  .seg.curwrap button.addcur { grid-column: 1 / -1; color: var(--accent); border: 1px dashed var(--line); font-size: 14px; }
+  .rate-row.cur5 { grid-template-columns: 76px auto auto 1fr auto; gap: 8px; }
+  .rate-row.cur5 #curCodeEcho { font-size: 13.5px; color: var(--muted); }
+  .curlist { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .curlist .row { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 10px; padding: 8px 10px; }
+  .curlist .row b { font-size: 14px; min-width: 46px; }
+  .curlist .row span { font-size: 12.5px; color: var(--muted); flex: 1; }
+  .curlist .row button { color: var(--out); padding: 4px 8px; font-size: 13px; }
+  .curlist .row button:disabled { opacity: .35; }
   .imgopt { display: flex; align-items: center; gap: 8px; margin: 10px 2px 0; font-size: 13px; color: var(--muted); }
   .imgopt input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
   .imgview { position: fixed; inset: 0; z-index: 70; background: rgba(20, 14, 12, .55); display: none; align-items: flex-start; justify-content: center; overflow: auto; padding: 24px 14px 34px; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
@@ -593,7 +604,7 @@
       <div class="set">
         <h3 data-i="baseCur"></h3>
         <p data-i="baseCurHint"></p>
-        <div class="seg four" id="baseSeg"><button data-b="JPY">JPY</button><button data-b="HKD">HKD</button><button data-b="USD">USD</button><button data-b="THB">THB</button></div>
+        <div class="seg curwrap" id="baseSeg"></div>
         <div id="rateBlock">
           <h3 style="margin-top:14px" data-i="rates"></h3>
           <p data-i="ratesHint"></p>
@@ -745,6 +756,29 @@
   </div>
 </div>
 
+<div class="sheet" id="curSheet" role="dialog" aria-modal="true">
+  <div class="grab"></div>
+  <h2 data-i="addCurTitle"></h2>
+  <p class="hint" data-i="addCurHint"></p>
+  <div class="field">
+    <label data-i="curCode"></label>
+    <input class="txt" id="curCode" maxlength="4" autocapitalize="characters" autocomplete="off" spellcheck="false" data-ph="curCodePh">
+  </div>
+  <div class="field">
+    <label data-i="rates"></label>
+  </div>
+  <div class="rate-row cur5"><input class="txt num" id="curPer" type="number" inputmode="numeric" step="1" min="1" value="1"><span class="num" id="curCodeEcho">—</span><span>=</span><input class="txt num" id="curRate" type="number" inputmode="decimal" step="0.0001" min="0.0001"><span>THB</span></div>
+  <p class="hint" data-i="curRateHint"></p>
+  <div id="curMineBlock" style="display:none">
+    <div class="field" style="margin-top:14px"><label data-i="curMine"></label></div>
+    <div id="curMine"></div>
+  </div>
+  <div class="actions">
+    <button class="btn ghost" id="curCancel" data-i="cancel"></button>
+    <button class="btn primary" id="curSave" data-i="curAdd"></button>
+  </div>
+</div>
+
 <div class="sheet" id="newTripSheet" role="dialog" aria-modal="true">
   <div class="grab"></div>
   <h2 data-i="newTrip"></h2>
@@ -784,10 +818,15 @@
   const GROUP_ICON = 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
   const CUR = {
     JPY: { sym: '¥', per: 100 },
+    CNY: { sym: 'CN¥', per: 1 },
     HKD: { sym: 'HK$', per: 1 },
     USD: { sym: 'US$', per: 1 },
     THB: { sym: '฿', per: 1 }
   };
+  const DEF_RATES = { JPY: 23.0, HKD: 4.6, CNY: 5.0, USD: 36.0 };
+  // custom currencies live in S.cur = { KRW: { per: 1000 } }
+  const curDef = (c) => CUR[c] || (S && S.cur && S.cur[c]) || null;
+  const curCodes = () => [...Object.keys(CUR), ...Object.keys((S && S.cur) || {})];
 
   // ---------- i18n ----------
   const I18N = {
@@ -797,8 +836,13 @@
       palette: 'โทนสี', paletteHint: 'เลือกโทนสีของแอป ใช้ได้กับทั้งโหมดสว่างและมืด', palDefault: 'ค่าเริ่มต้น', palCherry: 'เชอร์รี่', members: 'สมาชิก', atTripEnd: 'ตอนปิดทริป', language: 'ภาษา / Language', tripName: 'ชื่อทริป', tripPh: 'เช่น ญี่ปุ่น ต.ค. 69, ฮ่องกง 3 วัน',
       membersHint: 'ใส่ชื่อเล่นสั้น ๆ จะได้อ่านง่ายในรายการ · ลบได้เฉพาะคนที่ยังไม่มีรายการ', addMember: '+ เพิ่มสมาชิก',
       baseCur: 'สกุลเงินของทริป', baseCurHint: 'เลือกสกุลเงินที่ใช้ในทริปนี้ ยอดทุกอย่างจะแสดงเป็นสกุลนี้คู่กับเงินบาท และตอนบันทึกเลือกกรอกเป็นสกุลทริปหรือบาทก็ได้',
-      curJPY: 'JPY', curHKD: 'HKD', curUSD: 'USD', curTHB: 'THB',
-      curName: { JPY: 'เยน', HKD: 'ดอลลาร์ฮ่องกง', USD: 'ดอลลาร์สหรัฐ', THB: 'บาท' },
+      curName: { JPY: 'เยน', HKD: 'ดอลลาร์ฮ่องกง', CNY: 'หยวน', USD: 'ดอลลาร์สหรัฐ', THB: 'บาท' },
+      addCur: '+ เพิ่มสกุลเงิน', addCurTitle: 'เพิ่มสกุลเงิน', addCurHint: 'ใส่รหัสสกุลเงินกับอัตราที่แลกจริง แล้วจะเลือกใช้เป็นสกุลของทริปได้เลย',
+      curCode: 'รหัสสกุลเงิน', curCodePh: 'เช่น KRW, TWD, VND', curRateHint: 'กรอกจำนวนหน่วยให้อ่านง่าย เช่น 1000 KRW = 25 บาท หรือ 1 SGD = 27 บาท',
+      curAdd: 'เพิ่มสกุลเงิน', curMine: 'สกุลเงินที่เพิ่มเอง', curRowInfo: (per, c, r) => `${per} ${c} = ${r} THB`,
+      curBad: 'ใส่รหัสสกุลเงิน 3 ตัวอักษร (A–Z)', curDup: 'มีสกุลเงินนี้อยู่แล้ว', curNeedRate: 'ใส่อัตราแลกเปลี่ยนก่อน',
+      curAdded: (c) => `เพิ่ม ${c} แล้ว เลือกใช้ได้เลย`, curRemoved: (c) => `ลบ ${c} แล้ว`,
+      curInUse: (c) => `${c} มีรายการอยู่ หรือกำลังใช้เป็นสกุลของทริป ลบไม่ได้`,
       rates: 'อัตราแลกเปลี่ยน', ratesHint: 'กรอกเองตามอัตราที่แลกจริง แก้ได้ตลอด ยอดเทียบบาทจะคำนวณใหม่ให้',
       shareHint: 'ดึงสรุปยอดและรายการทั้งหมดแยกตามวัน ไว้ดูหรือคัดลอกส่งให้เพื่อนในแชต',
       shareSummary: 'ส่งต่อ', shareTitle: 'สรุปส่งเพื่อน', shareCopy: 'คัดลอกข้อความ', shareClose: 'ปิด',
@@ -844,8 +888,13 @@
       palette: 'Color theme', paletteHint: 'Pick the app palette. Applies in both light and dark mode', palDefault: 'Default', palCherry: 'Cherry', members: 'Members', atTripEnd: 'At trip end', language: 'Language / ภาษา', tripName: 'Trip name', tripPh: 'e.g. Japan Oct 2026, Hong Kong weekend',
       membersHint: 'Short nicknames read best in the list · you can only remove people with no entries', addMember: '+ Add member',
       baseCur: 'Trip currency', baseCurHint: 'Pick the currency used on this trip. Everything is shown in it alongside Thai baht, and each entry can be typed in either',
-      curJPY: 'JPY', curHKD: 'HKD', curUSD: 'USD', curTHB: 'THB',
-      curName: { JPY: 'yen', HKD: 'Hong Kong dollars', USD: 'US dollars', THB: 'baht' },
+      curName: { JPY: 'yen', HKD: 'Hong Kong dollars', CNY: 'yuan', USD: 'US dollars', THB: 'baht' },
+      addCur: '+ Add currency', addCurTitle: 'Add a currency', addCurHint: 'Enter the code and the rate you actually exchanged at — then you can pick it as the trip currency',
+      curCode: 'Currency code', curCodePh: 'e.g. KRW, TWD, VND', curRateHint: 'Pick a unit count that reads well, e.g. 1000 KRW = 25 THB, or 1 SGD = 27 THB',
+      curAdd: 'Add currency', curMine: 'Currencies you added', curRowInfo: (per, c, r) => `${per} ${c} = ${r} THB`,
+      curBad: 'Use a 3-letter code (A–Z)', curDup: 'That currency already exists', curNeedRate: 'Enter the exchange rate first',
+      curAdded: (c) => `${c} added — ready to pick`, curRemoved: (c) => `Removed ${c}`,
+      curInUse: (c) => `${c} has entries, or is the current trip currency — can't remove it`,
       rates: 'Exchange rate', ratesHint: 'Type the rate you actually exchanged at. Change any time — baht figures recalculate',
       shareHint: 'Pull up the totals and a day-by-day list of everything, to review or copy into a chat',
       shareSummary: 'Share', shareTitle: 'Fund summary', shareCopy: 'Copy text', shareClose: 'Close',
@@ -898,7 +947,7 @@
     palette: 'default',
     trip: '',
     base: 'JPY',
-    rates: { JPY: 23.0, HKD: 4.6, USD: 36.0 }, // THB per 100 JPY, per 1 HKD, per 1 USD
+    rates: { JPY: 23.0, HKD: 4.6, CNY: 5.0, USD: 36.0 }, cur: {}, // THB per 100 JPY, per 1 HKD/CNY/USD
     members: ['A', 'B'].map((n, i) => ({ id: 'm' + (i + 1), name: n, color: COLORS[i] })),
     entries: []
   });
@@ -909,8 +958,10 @@
   }
   function migrate(o) {
     if (!o.rates) o.rates = { JPY: o.rate > 0 ? o.rate : 23.0, HKD: 4.6, USD: 36.0 };
-    ['JPY', 'HKD', 'USD'].forEach(c => { if (!(o.rates[c] > 0)) o.rates[c] = { JPY: 23.0, HKD: 4.6, USD: 36.0 }[c]; });
-    if (!CUR[o.base]) o.base = 'JPY';
+    Object.keys(DEF_RATES).forEach(c => { if (!(o.rates[c] > 0)) o.rates[c] = DEF_RATES[c]; });
+    if (!o.cur || typeof o.cur !== 'object') o.cur = {};
+    Object.keys(o.cur).forEach(c => { if (!(o.cur[c] && o.cur[c].per > 0) || !(o.rates[c] > 0)) delete o.cur[c]; });
+    if (!CUR[o.base] && !o.cur[o.base]) o.base = 'JPY';
     if (!I18N[o.lang]) o.lang = 'th';
     if (o.palette !== 'cherry') o.palette = 'default';
     o.entries.forEach(e => { if (!e.cur) e.cur = 'JPY'; if (e.orig == null) e.orig = e.amount; });
@@ -930,10 +981,10 @@
   function saveHist() { try { localStorage.setItem(HKEY, JSON.stringify(H)); } catch (e) {} }
   function withState(tmp, fn) { const keep = S; S = tmp; try { return fn(); } finally { S = keep; } }
   let shareState = null;
-  const thbPer = (c) => c === 'THB' ? 1 : S.rates[c] / CUR[c].per;
+  const thbPer = (c) => { if (c === 'THB') return 1; const d = curDef(c); return d ? S.rates[c] / d.per : 1; };
   const toBase = (v, c) => v * thbPer(c) / thbPer(S.base);
   const amt = (e) => toBase(e.orig != null ? e.orig : e.amount, e.cur || 'JPY');
-  const Y = () => CUR[S.base].sym;
+  const Y = () => (curDef(S.base) || {}).sym || S.base;
   const toOrig = (b, c) => b * thbPer(S.base) / thbPer(c);
   const advBase = (e) => e.adv && member(e.adv.by) ? Math.min(amt(e), toBase(e.adv.orig, e.cur || 'JPY')) : 0;
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -1024,7 +1075,7 @@
   function renderAll() {
     const r = calc();
     $('tripName').textContent = S.trip || t('appName');
-    $('rateShow').textContent = S.base === 'THB' ? 'THB' : `${CUR[S.base].per} ${S.base} = ${S.rates[S.base]} THB`;
+    $('rateShow').textContent = S.base === 'THB' ? 'THB' : `${(curDef(S.base) || {}).per || 1} ${S.base} = ${S.rates[S.base]} THB`;
     document.body.classList.toggle('base-thb', S.base === 'THB');
     document.querySelectorAll('.cc').forEach(el => el.textContent = S.base);
     $('balJPY').textContent = fmt(r.balance);
@@ -1209,9 +1260,9 @@
 
   function renderSettings() {
     if (document.activeElement !== $('setTrip')) $('setTrip').value = S.trip;
-    $('rateLeft').textContent = `${CUR[S.base].per} ${S.base}`;
+    $('rateLeft').textContent = `${(curDef(S.base) || {}).per || 1} ${S.base}`;
     if (document.activeElement !== $('rateBase') && S.base !== 'THB') $('rateBase').value = S.rates[S.base];
-    $('baseSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.b === S.base));
+    renderBaseSeg();
     $('palSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === (S.palette || 'default')));
     const box = $('membersEdit');
     if (box.contains(document.activeElement)) return;
@@ -1248,7 +1299,50 @@
   $('setTrip').oninput = () => { S.trip = $('setTrip').value; save(); $('tripName').textContent = S.trip || t('appName'); };
   $('rateBase').onchange = () => { const v = parseFloat($('rateBase').value); if (v > 0 && S.base !== 'THB') { S.rates[S.base] = v; save(); renderAll(); } else if (S.base !== 'THB') $('rateBase').value = S.rates[S.base]; };
   $('palSeg').querySelectorAll('button').forEach(b => b.onclick = () => { S.palette = b.dataset.p; save(); applyPalette(); renderAll(); });
-  $('baseSeg').querySelectorAll('button').forEach(b => b.onclick = () => { if (S.base === b.dataset.b) return; S.base = b.dataset.b; save(); renderAll(); toast(t('baseChanged', S.base)); });
+  function renderBaseSeg() {
+    const seg = $('baseSeg');
+    seg.innerHTML = curCodes().map(c => `<button data-b="${c}" class="${c === S.base ? 'on' : ''}">${c}</button>`).join('')
+      + `<button class="addcur" id="addCurBtn">${esc(t('addCur'))}</button>`;
+    seg.querySelectorAll('button[data-b]').forEach(b => b.onclick = () => { if (S.base === b.dataset.b) return; S.base = b.dataset.b; save(); renderAll(); toast(t('baseChanged', S.base)); });
+    $('addCurBtn').onclick = openCurSheet;
+  }
+  // ---------- custom currencies ----------
+  function curUsed(c) { return S.base === c || S.entries.some(e => (e.cur || 'JPY') === c); }
+  function renderCurMine() {
+    const codes = Object.keys(S.cur || {});
+    $('curMineBlock').style.display = codes.length ? '' : 'none';
+    $('curMine').className = 'curlist';
+    $('curMine').innerHTML = codes.map(c => `<div class="row"><b>${c}</b><span class="num">${esc(t('curRowInfo', S.cur[c].per, c, S.rates[c]))}</span><button data-c="${c}" ${curUsed(c) ? 'disabled' : ''}>${esc(t('delete'))}</button></div>`).join('');
+    $('curMine').querySelectorAll('button[data-c]').forEach(b => b.onclick = () => {
+      const c = b.dataset.c;
+      if (curUsed(c)) { toast(t('curInUse', c)); return; }
+      delete S.cur[c]; delete S.rates[c]; save(); renderAll(); renderCurMine(); toast(t('curRemoved', c));
+    });
+  }
+  function openCurSheet() {
+    $('curCode').value = ''; $('curPer').value = '1'; $('curRate').value = ''; $('curCodeEcho').textContent = '—';
+    renderCurMine();
+    $('scrim').classList.add('on'); $('curSheet').classList.add('on');
+    setTimeout(() => $('curCode').focus(), 60);
+  }
+  $('curCode').oninput = () => {
+    const v = $('curCode').value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+    $('curCode').value = v;
+    $('curCodeEcho').textContent = v || '—';
+  };
+  $('curCancel').onclick = closeSheet;
+  $('curSave').onclick = () => {
+    const c = $('curCode').value.toUpperCase().replace(/[^A-Z]/g, '');
+    const per = Math.round(parseFloat($('curPer').value));
+    const rate = parseFloat($('curRate').value);
+    if (c.length !== 3) { toast(t('curBad')); return; }
+    if (CUR[c] || (S.cur && S.cur[c])) { toast(t('curDup')); return; }
+    if (!(rate > 0) || !(per > 0)) { toast(t('curNeedRate')); return; }
+    S.cur = S.cur || {};
+    S.cur[c] = { sym: c, per };
+    S.rates[c] = rate;
+    save(); renderAll(); closeSheet(); toast(t('curAdded', c));
+  };
   $('rateBtn').onclick = () => { showView('set'); if (S.base !== 'THB') $('rateBase').focus(); };
   $('explainBtn').onclick = () => toast(t('explain'));
 
@@ -1284,7 +1378,7 @@
     $('scrim').classList.add('on'); $('sheet').classList.add('on');
     if (!e) setTimeout(() => $('fAmount').focus(), 300);
   }
-  function closeSheet() { $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); }
+  function closeSheet() { $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); }
   $('fab').onclick = () => openSheet(null);
   $('scrim').onclick = closeSheet; $('fCancel').onclick = closeSheet;
 
