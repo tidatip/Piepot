@@ -507,6 +507,13 @@
   .toast.on { display: block; }
   .toast button { margin-left: 12px; color: var(--accent); font-weight: 700; }
   :root[data-theme="dark"] .toast button { color: var(--accent); }
+  .imgopt { display: flex; align-items: center; gap: 8px; margin: 10px 2px 0; font-size: 13px; color: var(--muted); }
+  .imgopt input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+  .imgview { position: fixed; inset: 0; z-index: 70; background: rgba(20, 14, 12, .55); display: none; align-items: flex-start; justify-content: center; overflow: auto; padding: 24px 14px 34px; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+  .imgview.on { display: flex; }
+  .imgview-in { width: min(440px, 100%); background: var(--surface); border-radius: 16px; padding: 14px; box-shadow: var(--shadow); }
+  .imgview-in img { width: 100%; border-radius: 10px; border: 1px solid var(--line); display: block; }
+  .imgview-in .hint { text-align: center; margin: 10px 0 2px; }
 </style>
 </head>
 <body>
@@ -719,9 +726,22 @@
   <div class="grab"></div>
   <h2 data-i="shareTitle"></h2>
   <div class="share-prev" id="sharePrev"></div>
+  <label class="imgopt"><input type="checkbox" id="imgPeople"><span data-i="imgInclPeople"></span></label>
   <div class="actions">
     <button class="btn ghost" id="shareClose" data-i="shareClose"></button>
+    <button class="btn ghost" id="shareImg" data-i="imgBtn"></button>
     <button class="btn primary" id="shareCopy" data-i="shareCopy"></button>
+  </div>
+</div>
+
+<div class="imgview" id="imgView" role="dialog" aria-modal="true">
+  <div class="imgview-in">
+    <img id="imgOut" alt="">
+    <p class="hint" data-i="imgHint"></p>
+    <div class="actions">
+      <button class="btn ghost" id="imgClose" data-i="shareClose"></button>
+      <button class="btn primary" id="imgShareBtn" data-i="imgShare"></button>
+    </div>
   </div>
 </div>
 
@@ -773,7 +793,7 @@
   const I18N = {
     th: {
       appName: 'PiePot', balance: 'เงินกองกลางคงเหลือ', fundIn: 'รับ', fundOut: 'จ่าย',
-      spentAll: 'ใช้ไปทั้งหมด', perHead: 'เฉลี่ยต่อคน', whereEveryone: 'Slice Status', howCalc: 'ดูวิธีคิด', spentOn: 'ใช้ไปกับอะไรบ้าง',
+      spentAll: 'ใช้ไปทั้งหมด', perHead: 'เฉลี่ยต่อคน', whereEveryone: 'ส่วนของแต่ละคน', howCalc: 'ดูวิธีคิด', spentOn: 'ใช้ไปกับอะไรบ้าง',
       palette: 'โทนสี', paletteHint: 'เลือกโทนสีของแอป ใช้ได้กับทั้งโหมดสว่างและมืด', palDefault: 'ค่าเริ่มต้น', palCherry: 'เชอร์รี่', members: 'สมาชิก', atTripEnd: 'ตอนปิดทริป', language: 'ภาษา / Language', tripName: 'ชื่อทริป', tripPh: 'เช่น ญี่ปุ่น ต.ค. 69, ฮ่องกง 3 วัน',
       membersHint: 'ใส่ชื่อเล่นสั้น ๆ จะได้อ่านง่ายในรายการ · ลบได้เฉพาะคนที่ยังไม่มีรายการ', addMember: '+ เพิ่มสมาชิก',
       baseCur: 'สกุลเงินของทริป', baseCurHint: 'เลือกสกุลเงินที่ใช้ในทริปนี้ ยอดทุกอย่างจะแสดงเป็นสกุลนี้คู่กับเงินบาท และตอนบันทึกเลือกกรอกเป็นสกุลทริปหรือบาทก็ได้',
@@ -782,6 +802,7 @@
       rates: 'อัตราแลกเปลี่ยน', ratesHint: 'กรอกเองตามอัตราที่แลกจริง แก้ได้ตลอด ยอดเทียบบาทจะคำนวณใหม่ให้',
       shareHint: 'ดึงสรุปยอดและรายการทั้งหมดแยกตามวัน ไว้ดูหรือคัดลอกส่งให้เพื่อนในแชต',
       shareSummary: 'ส่งต่อ', shareTitle: 'สรุปส่งเพื่อน', shareCopy: 'คัดลอกข้อความ', shareClose: 'ปิด',
+      imgBtn: 'บันทึกเป็นรูป', imgInclPeople: 'ใส่ส่วนของแต่ละคนในรูป', imgHint: 'กดค้างที่รูปเพื่อบันทึกลงเครื่อง', imgShare: 'แชร์รูป', imgFail: 'สร้างรูปไม่สำเร็จ ลองใหม่อีกครั้ง',
       newTrip: 'เริ่มทริปใหม่', newTripHint: 'ทริปปัจจุบันจะถูกเก็บเข้าประวัติการเดินทางโดยอัตโนมัติ ไม่หายไปไหน แล้วเริ่มรายการใหม่ว่าง ๆ (สมาชิก สกุลเงิน และอัตรายังอยู่ครบ)',
       newTripSheetHint: 'ทริปปัจจุบันจะถูกเก็บเข้าประวัติการเดินทาง แล้วเริ่มรายการใหม่ว่าง ๆ', newTripGo: 'เริ่มทริปใหม่', newTripDone: 'เริ่มทริปใหม่แล้ว ทริปเดิมอยู่ในประวัติการเดินทาง',
       history: 'ประวัติการเดินทาง', histEmpty: 'ยังไม่มีทริปที่ผ่านมา — เมื่อกด "เริ่มทริปใหม่" ทริปเดิมจะมาเก็บไว้ที่นี่ กดดูสรุปย้อนหลังได้',
@@ -828,6 +849,7 @@
       rates: 'Exchange rate', ratesHint: 'Type the rate you actually exchanged at. Change any time — baht figures recalculate',
       shareHint: 'Pull up the totals and a day-by-day list of everything, to review or copy into a chat',
       shareSummary: 'Share', shareTitle: 'Fund summary', shareCopy: 'Copy text', shareClose: 'Close',
+      imgBtn: 'Save as image', imgInclPeople: 'Include Slice Status in the image', imgHint: 'Long-press the image to save it', imgShare: 'Share image', imgFail: "Couldn't create the image — try again",
       newTrip: 'New trip', newTripHint: 'The current trip is saved to Trip history automatically — nothing is lost — then you start fresh (members, currency and rates are kept)',
       newTripSheetHint: 'The current trip is saved to Trip history, then you start fresh', newTripGo: 'Start new trip', newTripDone: 'New trip started — the old one is in Trip history',
       history: 'Trip history', histEmpty: 'No past trips yet — when you tap "New trip", the old one is kept here. Tap any trip to see its summary',
@@ -1457,6 +1479,178 @@
   $('shareSummary').onclick = () => { shareState = null; renderShare(); $('scrim').classList.add('on'); $('shareSheet').classList.add('on'); };
   $('shareClose').onclick = closeSheet;
   $('shareCopy').onclick = () => copyText(withState(shareState || S, summaryText), t('summaryCopied'));
+
+  // ---------- summary image ----------
+  let imgBlob = null;
+  const imgFileName = (st) => ((st.trip || 'PiePot').replace(/[\\/:*?"<>|]/g, '').trim() || 'PiePot') + '-summary.png';
+  async function buildSummaryImage(inclPeople) {
+    const st = shareState || S;
+    const isTH = T === I18N.th;
+    const truncDet = (s) => {
+      const a = Array.from(String(s));
+      if (a.length <= 30) return s;
+      let k = 29;
+      const comb = /[ัำ-ฺ็-๎]/;
+      while (k < a.length && comb.test(a[k])) k++;
+      return a.slice(0, k).join('') + '…';
+    };
+    const data = withState(st, () => {
+      const d = summaryData();
+      const base = S.base, trip = S.trip;
+      const rows = S.entries.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.ts || 0) - (b.ts || 0)).map(e => {
+        const dep = e.type === 'deposit';
+        let det;
+        if (dep) { det = (e.note || t('depositDefault')) + (member(e.by) ? ' — ' + mname(e.by) : ''); }
+        else {
+          const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
+          det = catName(cat) + (e.note ? ': ' + e.note : '');
+          if (e.paidBy !== 'fund') det += ' ' + t('sumAdvanced', mname(e.paidBy));
+          else if (advBase(e) > 0) det += ' ' + t('sumAdvancedPart', mname(e.adv.by), money(advBase(e)));
+        }
+        if (e.cur !== base) det += ' · ' + moneyC(e.orig, e.cur);
+        return { date: e.date, det: truncDet(det), amt: fmtA(amt(e)), dep };
+      });
+      const r2 = calc();
+      const peopleRows = S.members.map(m => {
+        const p = r2.per[m.id];
+        const status = p.net > 0.5 ? t('getBack') : p.net < -0.5 ? t('sumPayMore') : '';
+        const val = Math.abs(p.net) <= 0.5 ? '0' : money(Math.abs(p.net));
+        const line1 = isTH
+          ? `รับ ${money(p.in)}${p.paid ? ` สำรอง ${money(p.paid)}` : ''} ออก ${money(p.share)}`
+          : `chipped in ${money(p.in)}${p.paid ? ` advanced ${money(p.paid)}` : ''} share ${money(p.share)}`;
+        return { prefix: m.name + ': ', line1, line2: [status, val].filter(Boolean).join(' ') };
+      });
+      return { d, rows, base, trip, peopleRows };
+    });
+    try {
+      if (isTH) await Promise.all(['300', '500', '600'].map(w => document.fonts.load(w + ' 28px Prompt')));
+      await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]);
+    } catch (err) {}
+    const css = getComputedStyle(document.body);
+    const cvar = (n, f) => (css.getPropertyValue(n) || '').trim() || f;
+    const C = { bg: cvar('--bg', '#FCF3E7'), ink: cvar('--ink', '#3A3230'), muted: cvar('--muted', '#8A7F76'), line: cvar('--line', '#C3D1D1'), accent: cvar('--accent', '#517B7B'), inC: cvar('--in', '#946A27'), outC: cvar('--out', '#D93725') };
+    const FAM = isTH ? '"Prompt","Noto Sans Thai",system-ui,sans-serif' : '-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Segoe UI",Roboto,system-ui,sans-serif';
+    const REG = isTH ? 300 : 400, MED = isTH ? 500 : 600, BOLD = 600;
+    const FONT = (w, s) => `${w} ${s}px ${FAM}`;
+    const LH = 1.45, P = 56, GAP = 24;
+    const meas = document.createElement('canvas').getContext('2d');
+    const tw = (text, font) => { meas.font = font; return meas.measureText(String(text)).width; };
+    const dShort = (iso) => { const [y, m, dd] = iso.split('-').map(Number); const yy = String((isTH ? y + 543 : y) % 100).padStart(2, '0'); return isTH ? `${dd} ${T.months[m - 1]} ${yy}` : `${T.months[m - 1]} ${dd}, ${yy}`; };
+    // column widths measured with the real fonts, so nothing can overflow
+    const dateF = FONT(REG, 25), detF = FONT(REG, 26), amtF = FONT(MED, 26), thF = FONT(MED, 25);
+    const amtHead = `${t('amount')} (${data.base})`;
+    let dateW = tw(t('date'), thF), detW = tw(t('note'), thF), amtW = tw(amtHead, thF);
+    data.rows.forEach(r => {
+      r.amtText = r.dep ? r.amt : `(${r.amt})`;
+      r.aw = tw(r.amtText, amtF);
+      dateW = Math.max(dateW, tw(dShort(r.date), dateF));
+      detW = Math.max(detW, tw(r.det, detF));
+      amtW = Math.max(amtW, r.aw);
+    });
+    const amtHeadW = tw(`${t('amount')} (${data.base})`, thF);
+    dateW = Math.ceil(dateW); detW = Math.ceil(detW); amtW = Math.ceil(amtW);
+    let W = P * 2 + dateW + GAP + detW + GAP + amtW;
+    W = Math.max(W, 780);
+    if (W > 1400) { detW -= W - 1400; W = 1400; }
+    const CW = W - P * 2;
+    const wrap = (text, font, width) => {
+      meas.font = font;
+      const out = []; let cur = '';
+      const flush = () => { if (cur) { out.push(cur); cur = ''; } };
+      String(text).split(' ').forEach((word, wi) => {
+        const cand = cur ? cur + ' ' + word : word;
+        if (meas.measureText(cand).width <= width) { cur = cand; return; }
+        if (meas.measureText(word).width <= width) { flush(); cur = word; return; }
+        // token longer than the line: split by character
+        for (const ch of word) {
+          const nx = cur ? cur + ch : ch;
+          if (meas.measureText(nx).width > width && cur) { flush(); cur = ch; } else cur = nx;
+        }
+      });
+      flush();
+      return out.length ? out : [''];
+    };
+    const ops = [];
+    const addText = (text, o) => {
+      o = o || {};
+      const s = o.s || 28, f = FONT(o.w || REG, s), ind = o.ind || 0;
+      wrap(text, f, CW - ind).forEach((ln, k) => ops.push({ gap: k ? 6 : (o.gap == null ? 16 : o.gap), h: s * LH, draw: (x, y) => { x.font = f; x.fillStyle = o.c || C.ink; x.textAlign = 'left'; x.fillText(ln, P + ind, y + s * (LH - 1) / 2); } }));
+    };
+    const addHr = (gap) => ops.push({ gap: gap == null ? 34 : gap, h: 2, draw: (x, y) => { x.fillStyle = C.line; x.fillRect(P, y, CW, 2); } });
+    const title = data.trip || t('appName');
+    addText(title, { w: BOLD, s: 54, gap: 0 });
+    const sub = data.d.head[0].indexOf(title) === 0 ? data.d.head[0].slice(title.length).replace(/^\s*[—-]\s*/, '') : data.d.head[0];
+    addText(sub, { s: 28, c: C.muted, gap: 14 });
+    let balS = 38;
+    while (balS > 26 && tw(data.d.head[1], FONT(MED, balS)) > CW) balS -= 2;
+    addText(data.d.head[1], { w: MED, s: balS, c: C.accent, gap: 30 });
+    const ioParts = data.d.head[2].split(' · ');
+    addText(ioParts.slice(0, 2).join(' · '), { s: 28, c: C.muted, gap: 14 });
+    if (ioParts[2]) addText(ioParts[2], { s: 28, c: C.muted, gap: 4 });
+    if (inclPeople && data.d.people.length) {
+      addHr();
+      addText(t('whereEveryone'), { w: MED, s: 32, gap: 0 });
+      const pplF = FONT(REG, 27);
+      data.peopleRows.forEach(pr => {
+        addText(pr.prefix + pr.line1, { s: 27, gap: 18, ind: 4 });
+        addText(pr.line2, { s: 27, gap: 5, ind: 4 + Math.ceil(tw(pr.prefix, pplF)) });
+      });
+    }
+    if (data.rows.length) {
+      addHr();
+      addText(t('sumAll'), { w: MED, s: 32, gap: 0 });
+      const X_DET = P + dateW + GAP, X_AMT = P + CW;
+      ops.push({ gap: 26, h: 50, draw: (x, y) => {
+        x.font = thF; x.fillStyle = C.muted;
+        x.textAlign = 'left'; x.fillText(t('date'), P, y); x.fillText(t('note'), X_DET, y);
+        x.fillText(amtHead, X_AMT - amtHeadW, y);
+        x.fillStyle = C.line; x.fillRect(P, y + 44, CW, 2);
+      } });
+      data.rows.forEach(r => {
+        const rh = 26 * LH + 22;
+        ops.push({ gap: 0, h: rh, draw: (x, y) => {
+          const ty = y + 11;
+          x.font = dateF; x.fillStyle = C.muted; x.textAlign = 'left'; x.fillText(dShort(r.date), P, ty + 1);
+          x.font = detF; x.fillStyle = C.ink; x.fillText(r.det, X_DET, ty);
+          x.font = amtF; x.fillStyle = r.dep ? C.inC : C.outC;
+          x.fillText(r.amtText, X_AMT - r.aw, ty);
+          x.globalAlpha = .55; x.fillStyle = C.line; x.fillRect(P, y + rh - 1, CW, 1); x.globalAlpha = 1;
+        } });
+      });
+    }
+    addHr();
+    addText('PiePot · ' + niceDate(today()), { s: 24, c: C.muted, gap: 0 });
+    let H = 78;
+    ops.forEach(o => { H += o.gap + o.h; });
+    H += 64;
+    const scale = 2, cnv = document.createElement('canvas');
+    cnv.width = Math.ceil(W * scale); cnv.height = Math.ceil(H) * scale;
+    const ctx = cnv.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = C.accent; ctx.fillRect(0, 0, W, 10);
+    ctx.textBaseline = 'top';
+    let y = 78;
+    ops.forEach(o => { y += o.gap; o.draw(ctx, y); y += o.h; });
+    return new Promise((res, rej) => cnv.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/png'));
+  }
+  $('shareImg').onclick = async () => {
+    try {
+      imgBlob = await buildSummaryImage($('imgPeople').checked);
+      const img = $('imgOut');
+      if (img.dataset.u) URL.revokeObjectURL(img.dataset.u);
+      const u = URL.createObjectURL(imgBlob); img.src = u; img.dataset.u = u;
+      let canShare = false;
+      try { canShare = !!(navigator.canShare && navigator.canShare({ files: [new File([imgBlob], imgFileName(shareState || S), { type: 'image/png' })] })); } catch (err) {}
+      $('imgShareBtn').style.display = canShare ? '' : 'none';
+      $('imgView').classList.add('on');
+    } catch (err) { toast(t('imgFail')); }
+  };
+  $('imgClose').onclick = () => $('imgView').classList.remove('on');
+  $('imgShareBtn').onclick = async () => {
+    if (!imgBlob) return;
+    try { await navigator.share({ files: [new File([imgBlob], imgFileName(shareState || S), { type: 'image/png' })] }); } catch (err) {}
+  };
 
   // ---------- new trip & history ----------
   const snapshot = () => ({ id: uid(), savedAt: Date.now(), state: JSON.parse(JSON.stringify(S)) });
