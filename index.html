@@ -673,7 +673,7 @@
           <button class="btn ghost small" id="addMember" data-i="addMember"></button>
         </div>
       </div>
-      <div class="set">
+      <div class="set" id="meBlock">
         <h3 data-i="meIs"></h3>
         <p data-i="meHint"></p>
         <div class="choices" id="meSeg"></div>
@@ -720,7 +720,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v8.0</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v8.1</p>
   </main>
 </div>
 
@@ -946,7 +946,7 @@
       all: 'ทั้งหมด', emptyList: 'ยังไม่มีรายการ', emptyListHint: 'กดปุ่ม + ด้านล่างเพื่อบันทึกรายการแรก', daySpent: 'ใช้ไป',
       depositDefault: 'รับเงิน', putIn: (n) => `รับจาก ${n}`, fromFund: 'จากกอง', advanced: (n) => `${n} สำรองจ่าย`,
       splitN: (n) => `หาร ${n}`, alone: (n) => `${n} คนเดียว`, reimburse: 'รอคืน',
-      nPeople: (n) => `${n} คน`, removeAria: (n) => `ลบ ${n}`, memberHasEntries: (n) => `${n} มีรายการอยู่ ลบหรือแก้รายการนั้นก่อน`, minMembers: 'ต้องมีอย่างน้อย 2 คน',
+      nPeople: (n) => `${n} คน`, removeAria: (n) => `ลบ ${n}`, memberHasEntries: (n) => `${n} มีรายการอยู่ ลบหรือแก้รายการนั้นก่อน`, minMembers: 'ต้องมีอย่างน้อย 1 คน',
       removed: (n) => `ลบ ${n} แล้ว`, maxMembers: 'รองรับได้สูงสุด 12 คน', newMember: (i) => `คนที่ ${i}`,
       baseChanged: (c) => `เปลี่ยนสกุลเงินของทริปเป็น ${c} แล้ว ยอดทั้งหมดคำนวณใหม่`,
       explain: 'สุทธิ = รับ + สำรองจ่าย − ส่วนที่ต้องออก · บวกคือได้คืน ลบคือจ่ายเพิ่ม',
@@ -1006,7 +1006,7 @@
       all: 'All', emptyList: 'No entries yet', emptyListHint: 'Tap + below to record the first one', daySpent: 'Spent',
       depositDefault: 'Chip In', putIn: (n) => `${n} chipped in`, fromFund: 'From fund', advanced: (n) => `${n} advanced`,
       splitN: (n) => `split ${n}`, alone: (n) => `${n} only`, reimburse: 'Repay',
-      nPeople: (n) => `${n} people`, removeAria: (n) => `Remove ${n}`, memberHasEntries: (n) => `${n} has entries — delete or edit those first`, minMembers: 'Need at least 2 members',
+      nPeople: (n) => `${n} people`, removeAria: (n) => `Remove ${n}`, memberHasEntries: (n) => `${n} has entries — delete or edit those first`, minMembers: 'Need at least 1 member',
       removed: (n) => `Removed ${n}`, maxMembers: 'Up to 12 members', newMember: (i) => `Person ${i}`,
       baseChanged: (c) => `Trip currency is now ${c} — totals recalculated`,
       explain: 'Net = chip in + advanced − share · positive cashes out, negative owes',
@@ -1069,6 +1069,7 @@
     o.mine = o.mine.filter(e => e && e.id && e.orig != null);
     o.mine.forEach(e => { if (!e.cur) e.cur = 'JPY'; if (!e.cat) e.cat = 'other'; if (e.src !== 'card') e.src = 'cash'; if (!e.date) e.date = '2000-01-01'; });
     if (o.meId && !o.members.some(m => m.id === o.meId)) o.meId = null;
+    if (!o.meId && o.members.length === 1) o.meId = o.members[0].id;
     delete o.rate;
     return o;
   }
@@ -1449,9 +1450,10 @@
     if (box.contains(document.activeElement)) return;
     $('memberCount').textContent = t('nPeople', S.members.length);
     const used = usedMembers();
-    box.innerHTML = S.members.map((m, i) => `<div class="m"><div class="avatar" style="background:${avc(m.color)}">${esc(m.name.slice(0, 2))}</div><input class="txt" data-i-idx="${i}" value="${esc(m.name)}" maxlength="12"><button class="rm" data-i-idx="${i}" aria-label="${esc(t('removeAria', m.name))}" ${used.has(m.id) || S.members.length <= 2 ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('');
+    box.innerHTML = S.members.map((m, i) => `<div class="m"><div class="avatar" style="background:${avc(m.color)}">${esc(m.name.slice(0, 2))}</div><input class="txt" data-i-idx="${i}" value="${esc(m.name)}" maxlength="12"><button class="rm" data-i-idx="${i}" aria-label="${esc(t('removeAria', m.name))}" ${used.has(m.id) || S.members.length <= 1 ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('');
     box.querySelectorAll('input').forEach(inp => inp.oninput = () => { const i = +inp.dataset.iIdx; S.members[i].name = inp.value.trim() || String.fromCharCode(65 + i); inp.previousElementSibling.textContent = S.members[i].name.slice(0, 2); save(); renderAll(); });
     box.querySelectorAll('.rm').forEach(b => b.onclick = () => removeMember(+b.dataset.iIdx));
+    $('meBlock').style.display = S.members.length > 1 ? '' : 'none';
     renderMePick($('meSeg'));
   }
   function renderMePick(box) {
@@ -1472,10 +1474,12 @@
     const m = S.members[i];
     if (!m) return;
     if (usedMembers().has(m.id)) { toast(t('memberHasEntries', m.name)); return; }
-    if (S.members.length <= 2) { toast(t('minMembers')); return; }
+    if (S.members.length <= 1) { toast(t('minMembers')); return; }
     const wasMe = S.meId === m.id;
     if (wasMe) S.meId = null;
-    S.members.splice(i, 1); save(); renderAll();
+    S.members.splice(i, 1);
+    if (!S.meId && S.members.length === 1) S.meId = S.members[0].id;
+    save(); renderAll();
     toast(t('removed', m.name), () => { S.members.splice(i, 0, m); if (wasMe) S.meId = m.id; save(); renderAll(); });
   }
   $('addMember').onclick = () => {
@@ -1655,8 +1659,9 @@
     $('typeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === F.type));
     $('catField').style.display = isExp ? '' : 'none';
     $('paidField').style.display = (isExp && !mineMode) ? '' : 'none';
-    $('splitField').style.display = (isExp && !mineMode) ? '' : 'none';
-    $('depField').style.display = (isExp || mineMode) ? 'none' : '';
+    const solo = S.members.length === 1;
+    $('splitField').style.display = (isExp && !mineMode && !solo) ? '' : 'none';
+    $('depField').style.display = (isExp || mineMode || solo) ? 'none' : '';
     $('fNote').placeholder = mineMode ? t('notePhMine') : isExp ? t('notePhExp') : t('notePhDep');
     const curs = [...new Set([S.base, 'THB', F.cur])];
     $('fCur').innerHTML = curs.map(c => `<button data-cur="${c}" class="${F.cur === c ? 'on' : ''}">${c}</button>`).join('');
