@@ -394,6 +394,7 @@
 
   /* ---------- entries list ---------- */
   .day { margin-top: 14px; }
+  .day > .card { overflow: hidden; }  /* clip square swipe rows to the card's rounded corners */
   .day-h { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 0 4px 6px; font-weight: 500; }
   .entry { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); width: 100%; text-align: left; }
   .entry:last-child { border-bottom: 0; }
@@ -720,7 +721,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v8.1</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v8.2</p>
   </main>
 </div>
 
