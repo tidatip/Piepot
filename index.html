@@ -339,6 +339,10 @@
   .fundlink:active { background: var(--surface-2); }
   .mine-note { font-size: 12px; color: var(--muted); margin: 10px 4px 0; line-height: 1.55; }
   .mine-note + .mine-note { margin-top: 7px; }
+  body.ro #fab, body.ro .nav [data-v="mine"], body.ro .nav [data-v="set"], body.ro #selectBtn { display: none; }
+  body.ro .nav .in { grid-template-columns: 1fr 1fr; }
+  body.ro .entry { cursor: default; }
+  body.ro:not(.ro-ready) .app, body.ro:not(.ro-ready) .nav { visibility: hidden; }
   .hero.low { background: var(--warn); }
   .hero.neg { background: var(--out); }
 
@@ -724,7 +728,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v8.3</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v9</p>
   </main>
 </div>
 
@@ -1049,7 +1053,8 @@
     rates: { JPY: 23.0, HKD: 4.6, CNY: 5.0, USD: 36.0 }, cur: {}, // THB per 100 JPY, per 1 HKD/CNY/USD
     members: ['A', 'B'].map((n, i) => ({ id: 'm' + (i + 1), name: n, color: COLORS[i] })),
     entries: [],
-    mine: [], meId: null
+    mine: [], meId: null,
+    tripCode: null
   });
   let S;
   function load() {
@@ -1092,7 +1097,12 @@
   const Y = () => (curDef(S.base) || {}).sym || S.base;
   const toOrig = (b, c) => b * thbPer(S.base) / thbPer(c);
   const advBase = (e) => e.adv && member(e.adv.by) ? Math.min(amt(e), toBase(e.adv.orig, e.cur || 'JPY')) : 0;
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  // read-only mode: the app is showing a trip someone shared, so nothing may touch this device's data
+  function save() {
+    if (window.__ppMember) return;
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    if (window.__ppQueuePush) window.__ppQueuePush();
+  }
 
   // ---------- helpers ----------
   const $ = (id) => document.getElementById(id);
@@ -1163,6 +1173,7 @@
     document.querySelectorAll('[data-ph]').forEach(el => { el.placeholder = t(el.dataset.ph); });
     $('langBtn').textContent = t('langBtn');
     document.title = (S.trip ? S.trip + ' · ' : '') + t('appName');
+    if (window.__ppOwnerLang) window.__ppOwnerLang();
   }
   function setLang(l) { if (!I18N[l]) return; S.lang = l; save(); applyLang(); renderAll(); }
   // ---------- start screen ----------
@@ -1240,6 +1251,7 @@
   let swOpen = null;
   function closeSw() { if (swOpen) { const r = swOpen.querySelector('.entry'); if (r) r.style.transform = ''; swOpen.classList.remove('sw-open'); swOpen = null; } }
   function deleteEntries(ids) {
+    if (window.__ppMember) { toast(t('shViewerToast')); return; }
     const removed = [];
     S.entries = S.entries.filter(e => { if (ids.has(e.id)) { removed.push(e); return false; } return true; });
     if (!removed.length) return;
@@ -1403,6 +1415,7 @@
     return `<button class="entry ${src}" data-id="${e.id}">${mineSel ? `<span class="ic ck ${mineIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(cat.icon)}</span>`}<span><span class="t">${esc(e.note || catName(cat))}</span><span class="m">${catName(cat)} <span class="pill src-${e.src === 'card' ? 'card' : 'cash'}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span></span></span><span class="amt num">−${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
   }
   function deleteMine(ids) {
+    if (window.__ppMember) { toast(t('shViewerToast')); return; }
     const removed = [];
     S.mine = (S.mine || []).filter(e => { if (ids.has(e.id)) { removed.push(e); return false; } return true; });
     if (!removed.length) return;
@@ -1565,6 +1578,7 @@
   // ---------- sheet / form ----------
   const F = { id: null, mode: 'fund', type: 'expense', cur: 'JPY', cat: 'food', paidBy: 'fund', split: [], by: null, advBy: null, advOrig: null, advManual: false };
   function openSheet(id, mode) {
+    if (window.__ppMember) { toast(t('shViewerToast')); return; }
     F.mode = mode === 'mine' ? 'mine' : 'fund';
     if (F.mode === 'mine') return openMineSheet(id);
     const e = id ? S.entries.find(x => x.id === id) : null;
@@ -2115,10 +2129,282 @@
     add('link', { rel: 'manifest', href: 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest)) });
   })();
 
+  // ================= PiePot v9 — share a read-only link with your trip =================
+  const OW = {
+    fb: {
+      apiKey: "AIzaSyBi09stCItHa0S2ap5qRL11g87FMFZ2kDI",
+      authDomain: "piepot-owner.firebaseapp.com",
+      projectId: "piepot-owner",
+      storageBucket: "piepot-owner.firebasestorage.app",
+      messagingSenderId: "55496471612",
+      appId: "1:55496471612:web:b476f4b5e6be42e5e83f39"
+    },
+    sdk: 'https://www.gstatic.com/firebasejs/12.17.1/'
+  };
+
+  Object.assign(I18N.th, {
+    shTitle: 'แชร์ให้เพื่อนในทริป',
+    shHint: 'เปิดแล้วจะได้ลิงก์สำหรับส่งให้เพื่อน เพื่อนเปิดดูได้อย่างเดียว เพิ่มหรือแก้ได้เฉพาะคุณ',
+    shOn: 'เปิดการแชร์', shOff: 'ปิดการแชร์', shCopy: 'ก๊อปลิงก์',
+    shCode: 'รหัสทริป', shCopied: 'ก๊อปลิงก์แล้ว',
+    shAdminIs: (n) => 'แอดมิน: ' + n,
+    shNeedMe: 'เลือกก่อนว่าคุณคือใครในรายชื่อสมาชิก (ตั้งค่า → ฉันคือ)',
+    shBarAdmin: 'แอดมิน · เพื่อนที่มีลิงก์เห็นข้อมูลนี้',
+    shBarMember: (n) => n ? 'ดูอย่างเดียว · จัดการโดย ' + n : 'ดูอย่างเดียว',
+    shSynced: (h) => 'ซิงก์ ' + h, shUpdated: (h) => 'อัปเดต ' + h,
+    shSyncing: 'กำลังซิงก์…', shSyncErr: 'ซิงก์ไม่สำเร็จ จะลองใหม่อัตโนมัติ',
+    shViewerToast: 'ดูได้อย่างเดียว — แอดมินเท่านั้นที่เพิ่มหรือแก้ได้',
+    shOffConfirm: 'ปิดการแชร์? ลิงก์ที่ส่งไปแล้วจะใช้ไม่ได้',
+    shOffDone: 'ปิดการแชร์แล้ว', shGone: 'ไม่พบทริปนี้ อาจถูกปิดการแชร์ไปแล้ว',
+    shLoading: 'กำลังโหลดทริป…', shNoNet: 'ต่อเน็ตไม่ได้',
+  });
+  Object.assign(I18N.en, {
+    shTitle: 'Share with your trip',
+    shHint: 'Turn this on to get a link for your friends. They can view only — just you can add or edit.',
+    shOn: 'Turn on sharing', shOff: 'Turn off sharing', shCopy: 'Copy link',
+    shCode: 'Trip code', shCopied: 'Link copied',
+    shAdminIs: (n) => 'Admin: ' + n,
+    shNeedMe: 'First pick who you are in the member list (Settings → I am)',
+    shBarAdmin: 'Admin · friends with the link see this',
+    shBarMember: (n) => n ? 'View only · managed by ' + n : 'View only',
+    shSynced: (h) => 'Synced ' + h, shUpdated: (h) => 'Updated ' + h,
+    shSyncing: 'Syncing…', shSyncErr: "Couldn't sync — will retry",
+    shViewerToast: 'View only — the admin can add or edit',
+    shOffConfirm: 'Turn off sharing? The link you sent will stop working',
+    shOffDone: 'Sharing is off', shGone: 'Trip not found — sharing may be off',
+    shLoading: 'Loading trip…', shNoNet: 'No connection',
+  });
+
+  // ---------- styles ----------
+  (function () {
+    const css = document.createElement('style');
+    css.textContent = [
+      '#ownerBar{display:none;align-items:center;justify-content:center;gap:8px;margin:0 16px 8px;padding:7px 12px;border-radius:999px;font-size:12.5px;line-height:1.3;background:var(--accent-soft);color:var(--ink)}',
+      '#ownerBar.on{display:flex}',
+      'body.pp-member #ownerBar{background:var(--in-soft,#F3E2C4)}',
+      '#ownerBar button{border:0;background:var(--surface);border-radius:999px;padding:3px 10px;font:inherit;font-size:12px;color:var(--accent);cursor:pointer}',
+      '.sh-code{font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:600;letter-spacing:1px;color:var(--ink);text-align:center;padding:10px;border:1px dashed var(--line);border-radius:12px;background:var(--bg);margin:8px 0}',
+      'body.pp-member #fab{display:none!important}',
+      'body.pp-member #v-set .card:not(.pp-keep){display:none}',
+      'body.pp-member #v-set .section-h{display:none}',
+      'body.pp-member #rateBtn{pointer-events:none;opacity:.6}',
+      'body.pp-member #selectBtn{display:none}',
+      // viewer: no personal tab, no FAB gap -> three evenly spaced tabs
+      'body.pp-member .nav [data-v="mine"]{display:none}',
+      'body.pp-member .nav .in{grid-template-columns:repeat(3,1fr)}'
+    ].join('');
+    document.head.appendChild(css);
+  })();
+
+  // ---------- state ----------
+  let FS = null, AU = null, db = null, auth = null, myUid = null;
+  let MEMBER = false, unsub = null, pushT = null, lastAt = 0, syncing = false;
+
+  const hhmm = (ms) => { const d = new Date(ms || Date.now()); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const genCode = () => { let s = ''; const a = new Uint32Array(6); (crypto.getRandomValues ? crypto.getRandomValues(a) : a.fill(Math.random() * 1e9)); for (let i = 0; i < 6; i++) s += CODE_ABC[a[i] % CODE_ABC.length]; return 'PIE-' + s; };
+  const tripLink = (code) => location.origin + location.pathname + '?t=' + code;
+  const adminName = () => { const m = S.members.find(x => x.id === S.meId); return m ? m.name : ''; };
+
+  // ---------- top bar ----------
+  const bar = document.createElement('div');
+  bar.id = 'ownerBar';
+  bar.innerHTML = '<span id="ownerBarTxt"></span><button type="button" id="ownerBarBtn" style="display:none"></button>';
+  const hero = document.getElementById('hero');
+  hero.parentNode.insertBefore(bar, hero);
+  function updateBar() {
+    const txt = document.getElementById('ownerBarTxt'), btn = document.getElementById('ownerBarBtn');
+    if (MEMBER) {
+      bar.classList.add('on');
+      txt.textContent = t('shBarMember', S.adminName || '') + (lastAt ? ' · ' + t('shUpdated', hhmm(lastAt)) : '');
+      btn.style.display = ''; btn.textContent = '↻';
+    } else if (S.tripCode) {
+      bar.classList.add('on');
+      txt.textContent = syncing ? t('shSyncing') : t('shBarAdmin') + (lastAt ? ' · ' + t('shSynced', hhmm(lastAt)) : '');
+      btn.style.display = 'none';
+    } else bar.classList.remove('on');
+  }
+  document.getElementById('ownerBarBtn').onclick = () => pullOnce();
+
+  // ---------- firebase ----------
+  async function fbInit() {
+    if (db) return true;
+    const [appMod, authMod, fsMod] = await Promise.all([
+      import(OW.sdk + 'firebase-app.js'),
+      import(OW.sdk + 'firebase-auth.js'),
+      import(OW.sdk + 'firebase-firestore.js')
+    ]);
+    AU = authMod; FS = fsMod;
+    const app = appMod.initializeApp(OW.fb);
+    auth = AU.getAuth(app);
+    db = FS.getFirestore(app);
+    const cred = await AU.signInAnonymously(auth);
+    myUid = cred.user.uid;
+    return true;
+  }
+
+  // personal entries (My Slice) and "I am" never leave this device
+  const packS = () => {
+    const o = JSON.parse(JSON.stringify(S));
+    delete o.tripCode; delete o.adminName;
+    o.mine = []; o.meId = null;
+    return JSON.stringify(o);
+  };
+
+  async function pushNow() {
+    if (MEMBER || !S.tripCode || !db) return;
+    syncing = true; updateBar();
+    try {
+      await FS.updateDoc(FS.doc(db, 'trips', S.tripCode), {
+        S: packS(), adminMemberId: S.meId || '', adminName: adminName(), at: Date.now()
+      });
+      lastAt = Date.now();
+    } catch (e) {
+      toast(t('shSyncErr'));
+      clearTimeout(pushT); pushT = setTimeout(pushNow, 20000);
+    }
+    syncing = false; updateBar();
+  }
+  window.__ppQueuePush = () => { if (MEMBER || !S.tripCode) return; clearTimeout(pushT); pushT = setTimeout(pushNow, 900); };
+
+  function adopt(d) {
+    let o = null;
+    try { o = JSON.parse(d.S); } catch (e) { return; }
+    if (!o || !o.members || !o.entries) return;
+    const lang = S.lang, pal = S.palette;
+    const keepMine = Array.isArray(S.mine) ? S.mine : [];
+    const keepMe = S.meId;
+    S = migrate(o);
+    S.lang = lang; S.palette = pal;
+    S.mine = keepMine; S.meId = keepMe && S.members.some(m => m.id === keepMe) ? keepMe : null;
+    S.tripCode = d.__code; S.adminName = d.adminName || '';
+    lastAt = d.at || Date.now();
+    applyPalette(); applyLang(); renderAll(); updateBar();
+  }
+  async function pullOnce() {
+    if (!db || !S.tripCode) return;
+    try {
+      const snap = await FS.getDoc(FS.doc(db, 'trips', S.tripCode));
+      if (!snap.exists()) { toast(t('shGone')); return; }
+      const d = snap.data(); d.__code = S.tripCode;
+      if ((d.at || 0) >= lastAt) adopt(d); else updateBar();
+    } catch (e) { toast(t('shNoNet')); }
+  }
+  function listen(code) {
+    if (unsub) unsub();
+    unsub = FS.onSnapshot(FS.doc(db, 'trips', code), (snap) => {
+      if (!snap.exists()) { toast(t('shGone')); return; }
+      const d = snap.data(); d.__code = code;
+      if ((d.at || 0) > lastAt) adopt(d);
+    }, () => {});
+  }
+
+  // ---------- share card in settings ----------
+  const shareCard = document.createElement('div');
+  shareCard.className = 'card pp-hide-member';
+  shareCard.innerHTML =
+    '<div class="set"><h3 id="shTitle"></h3><p id="shHint"></p>' +
+    '<div id="shOffBox"><div class="actions" style="margin-top:10px"><button class="btn ghost small" id="shOnBtn"></button></div></div>' +
+    '<div id="shOnBox" style="display:none">' +
+    '<div class="hint" id="shCodeLbl" style="margin-top:8px"></div>' +
+    '<div class="sh-code" id="shCodeVal">—</div>' +
+    '<div class="hint" id="shAdminLbl"></div>' +
+    '<div class="actions" style="margin-top:10px"><button class="btn ghost small" id="shOffBtn"></button><button class="btn primary small" id="shCopyBtn"></button></div>' +
+    '</div></div>';
+  (function () {
+    const setView = document.getElementById('v-set');
+    const histHead = setView.querySelector('[data-i="history"]');
+    const anchor = histHead ? histHead.closest('.section-h') : null;
+    if (anchor) setView.insertBefore(shareCard, anchor); else setView.appendChild(shareCard);
+    const pal = document.getElementById('palSeg');
+    if (pal && pal.closest('.card')) pal.closest('.card').classList.add('pp-keep');
+  })();
+
+  function renderShare() {
+    document.getElementById('shTitle').textContent = t('shTitle');
+    document.getElementById('shHint').textContent = t('shHint');
+    document.getElementById('shOnBtn').textContent = t('shOn');
+    document.getElementById('shOffBtn').textContent = t('shOff');
+    document.getElementById('shCopyBtn').textContent = t('shCopy');
+    document.getElementById('shCodeLbl').textContent = t('shCode');
+    document.getElementById('shAdminLbl').textContent = t('shAdminIs', adminName() || '—');
+    const on = !!S.tripCode;
+    document.getElementById('shOnBox').style.display = on ? '' : 'none';
+    document.getElementById('shOffBox').style.display = on ? 'none' : '';
+    document.getElementById('shCodeVal').textContent = S.tripCode || '—';
+    updateBar();
+  }
+
+  document.getElementById('shOnBtn').onclick = async () => {
+    if (!S.meId) { toast(t('shNeedMe')); return; }
+    try {
+      await fbInit();
+      const code = genCode();
+      await FS.setDoc(FS.doc(db, 'trips', code), {
+        adminUid: myUid, adminMemberId: S.meId, adminName: adminName(),
+        S: packS(), at: Date.now(), created: Date.now()
+      });
+      S.tripCode = code; lastAt = Date.now(); save(); renderShare();
+      copyLink();
+    } catch (e) { toast(t('shNoNet')); }
+  };
+  document.getElementById('shOffBtn').onclick = () => {
+    if (!confirm(t('shOffConfirm'))) return;
+    const code = S.tripCode;
+    S.tripCode = null; save(); renderShare();
+    if (unsub) { unsub(); unsub = null; }
+    if (db && code) FS.updateDoc(FS.doc(db, 'trips', code), { S: '', at: Date.now() }).catch(() => {});
+    toast(t('shOffDone'));
+  };
+  document.getElementById('shCopyBtn').onclick = () => copyLink();
+  function copyLink() {
+    const url = tripLink(S.tripCode);
+    const done = () => toast(t('shCopied'));
+    if (navigator.share) { navigator.share({ url }).then(done).catch(() => {}); return; }
+    if (navigator.clipboard) { navigator.clipboard.writeText(url).then(done).catch(() => prompt('', url)); return; }
+    prompt('', url);
+  }
+
+  // ---------- boot ----------
+  window.__ppOwnerLang = () => { renderShare(); };
+
+  (async function ownerBoot() {
+    const urlCode = new URLSearchParams(location.search).get('t');
+
+    if (urlCode) {
+      toast(t('shLoading'));
+      try {
+        await fbInit();
+        const snap = await FS.getDoc(FS.doc(db, 'trips', urlCode));
+        if (!snap.exists()) { toast(t('shGone')); renderShare(); return; }
+        const d = snap.data(); d.__code = urlCode;
+        if (d.adminUid === myUid) {
+          S.tripCode = urlCode; save();
+          if (d.S) adopt(d);
+          renderShare();
+        } else {
+          MEMBER = true; window.__ppMember = true;
+          document.body.classList.add('pp-member');
+          adopt(d);
+          listen(urlCode);
+          showView('sum');
+          document.body.classList.remove('v-mine');
+        }
+      } catch (e) { toast(t('shNoNet')); }
+      renderShare();
+      return;
+    }
+
+    if (S.tripCode) {
+      try { await fbInit(); listen(S.tripCode); await pullOnce(); } catch (e) {}
+    }
+    renderShare();
+  })();
+
   // ---------- first run ----------
   applyLang();
   renderAll();
-  if (!S.entries.length && S.members.length === 2 && S.members.every((m, i) => m.name === 'AB'[i])) {
+  if (!window.__ppMember && !S.tripCode && !S.entries.length && S.members.length === 2 && S.members.every((m, i) => m.name === 'AB'[i])) {
     showView('set');
     toast(t('firstRun'));
   }
