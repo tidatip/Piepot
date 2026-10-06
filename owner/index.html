@@ -721,7 +721,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.3</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.4</p>
   </main>
 </div>
 
@@ -736,6 +736,12 @@
 </nav>
 
 <div class="scrim" id="scrim"></div>
+<style>
+  .grp-all { display: flex; align-items: center; gap: 10px; margin: 14px 0 16px; padding: 12px 13px;
+    border: 1px solid var(--accent-soft); border-radius: 14px; background: var(--bg); cursor: pointer; }
+  .grp-all input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; margin: 0; }
+  .grp-all span { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.45; }
+</style>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true">
   <div class="grab"></div>
   <h2 id="sheetTitle"></h2>
@@ -803,6 +809,11 @@
     <label data-i="date"></label>
     <input class="txt num" id="fDate" type="date">
   </div>
+
+  <label class="grp-all" id="grpAllRow" style="display:none">
+    <input type="checkbox" id="grpAll" checked>
+    <span id="grpAllTxt"></span>
+  </label>
 
   <div class="actions">
     <button class="btn danger" id="fDelete" style="display:none" data-i="delete"></button>
@@ -911,6 +922,8 @@
   // ---------- i18n ----------
   const I18N = {
     th: {
+      grpAll: 'เลือกเพื่อแก้พร้อมกันทั้งหมด',
+      grpEdited: (n) => `แก้แล้ว ${n} รายการ`,
       appName: 'PiePot Owner', balance: 'เงินกองกลางคงเหลือ', fundIn: 'รับ', fundOut: 'จ่าย',
       spentAll: 'ใช้ไปทั้งหมด', perHead: 'เฉลี่ยต่อคน', whereEveryone: 'ส่วนของแต่ละคน', howCalc: 'ดูวิธีคิด', spentOn: 'ใช้ไปกับอะไรบ้าง',
       palette: 'โทนสี', paletteHint: 'เลือกโทนสีของแอป ใช้ได้กับทั้งโหมดสว่างและมืด', palDefault: 'ค่าเริ่มต้น', palCherry: 'เชอร์รี่', members: 'สมาชิก', atTripEnd: 'ตอนปิดทริป', language: 'ภาษา / Language', tripName: 'ชื่อทริป', tripPh: 'เช่น ญี่ปุ่น ต.ค. 69, ฮ่องกง 3 วัน',
@@ -971,6 +984,8 @@
       addMine: 'รายการส่วนตัว', editMine: 'แก้ไขรายการส่วนตัว', notePhMine: 'เช่น ของฝากแม่, กาแฟ'
     },
     en: {
+      grpAll: 'Edit all together',
+      grpEdited: (n) => `${n} entries updated`,
       appName: 'PiePot Owner', balance: 'Fund balance', fundIn: 'Chip In', fundOut: 'Paid from fund',
       spentAll: 'Total spent', perHead: 'Per person', whereEveryone: 'Slice Status', howCalc: 'How it works', spentOn: 'Spent on',
       palette: 'Color theme', paletteHint: 'Pick the app palette. Applies in both light and dark mode', palDefault: 'Default', palCherry: 'Cherry', members: 'Members', atTripEnd: 'At trip end', language: 'Language / ภาษา', tripName: 'Trip name', tripPh: 'e.g. Japan Oct 2026, Hong Kong weekend',
@@ -1585,12 +1600,28 @@
     F.advOrig = e && e.adv ? e.adv.orig : null;
     F.advManual = !!(e && e.adv);
     F.src = e ? (e.src === 'card' ? 'card' : 'cash') : (S.lastSrc === 'card' ? 'card' : 'cash');
+    F.grpIds = [];
+    if (e && e.type === 'deposit') {
+      const batch = e.grp
+        ? S.entries.filter(x => x.grp === e.grp)
+        : S.entries.filter(x => x.type === 'deposit' && !x.grp && x.date === e.date
+            && (x.note || '') === (e.note || '') && x.orig === e.orig && x.cur === e.cur && (x.src || '') === (e.src || ''));
+      const ids = S.members.map(m => m.id).sort().join(',');
+      if (batch.length === S.members.length && batch.length > 1
+          && batch.map(x => x.by).sort().join(',') === ids) F.grpIds = batch.map(x => x.id);
+    }
+    $('grpAllRow').style.display = F.grpIds.length ? '' : 'none';
+    if (F.grpIds.length) {
+      $('grpAll').checked = true;
+      $('grpAllTxt').textContent = t('grpAll');
+    }
     $('sheetTitle').textContent = e ? t('editEntry') : t('addEntry');
     setAmt(e ? (e.orig != null ? e.orig : e.amount) : '');
     $('fNote').value = e ? e.note || '' : '';
     $('fDate').value = e ? e.date : today();
     $('fDelete').style.display = e ? '' : 'none';
     renderForm();
+    grpSync();
     showSheet('sheet');
     if (!e) setTimeout(() => $('fAmount').focus(), 300);
   }
@@ -1802,11 +1833,30 @@
       if (F.paidBy === 'fund' && F.advBy && F.advOrig > 0) e.adv = { by: F.advBy, orig: Math.min(orig, Math.round(F.advOrig * 100) / 100) };
     } else { e.by = F.by; }
     if (F.type === 'expense' && F.paidBy === 'fund') { e.src = F.src === 'card' ? 'card' : 'cash'; S.lastSrc = e.src; }
+    if (F.id && F.grpIds && F.grpIds.length && $('grpAll').checked && F.type === 'deposit') {
+      let n = 0;
+      F.grpIds.forEach(gid => {
+        const j = S.entries.findIndex(x => x.id === gid);
+        if (j < 0) return;
+        S.entries[j] = { ...S.entries[j], cur: e.cur, orig: e.orig, amount: e.amount, note: e.note, date: e.date, src: e.src };
+        n++;
+      });
+      save(); closeSheet(); renderAll();
+      toast(t('grpEdited', n));
+      return;
+    }
     const i = S.entries.findIndex(x => x.id === e.id);
     if (i >= 0) { e.ts = S.entries[i].ts || e.ts; S.entries[i] = e; } else S.entries.push(e);
     save(); closeSheet(); renderAll();
     toast(i >= 0 ? t('edited') : (F.type === 'deposit' ? t('depositedToast', money(amount)) : t('savedToast', money(amount))));
   };
+  function grpSync() {
+    const on = !!(F.grpIds && F.grpIds.length && $('grpAll').checked);
+    const f = $('depField');
+    f.style.opacity = on ? '.45' : '';
+    f.style.pointerEvents = on ? 'none' : '';
+  }
+  $('grpAll').onchange = grpSync;
   $('fDelete').onclick = () => {
     if (F.mode === 'mine') {
       const j = (S.mine || []).findIndex(x => x.id === F.id);
