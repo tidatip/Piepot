@@ -648,6 +648,10 @@
         <div class="row num"><span data-i="myOwn"></span><b id="myOwnV">0</b></div>
         <div class="row num" id="mySrcRow" style="display:none"><span data-i="paidWith"></span><b><span data-i="srcCash"></span> <span id="mySrcCash">0</span> · <span data-i="srcCard"></span> <span id="mySrcCard">0</span></b></div>
       </div>
+      <div class="mywal" id="myWalWrap">
+        <div class="bar" id="myWalBar"><i id="myWalFill"></i></div>
+        <button type="button" class="walrow" id="myWalBtn"><span id="myWalLbl"></span><b class="num" id="myWalVal"></b></button>
+      </div>
     </section>
     <p class="mine-note" id="mineNote"></p>
     <p class="mine-note" id="minePrivate"></p>
@@ -721,7 +725,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.4</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.5</p>
   </main>
 </div>
 
@@ -741,6 +745,19 @@
     border: 1px solid var(--accent-soft); border-radius: 14px; background: var(--bg); cursor: pointer; }
   .grp-all input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; margin: 0; }
   .grp-all span { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.45; }
+</style>
+<style>
+  .hero.mine .mywal { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--mine-rule); }
+  .hero.mine .mywal .bar { height: 8px; margin: 0 0 9px; border-radius: 6px; background: var(--mine-rule); overflow: hidden; }
+  .hero.mine .mywal .bar i { display: block; height: 100%; width: 0; border-radius: 6px; background: var(--mine-ink); opacity: .72; transition: width .4s ease; }
+  .hero.mine .mywal .bar.over i { background: #7E2412; opacity: 1; }
+  .hero.mine .mywal .bar.off { display: none; }
+  .walrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 14px; text-align: left; opacity: .92; }
+  .walrow b { font-weight: 600; opacity: 1; }
+  .walrow.over b { color: #7E2412; }
+  .walrow.unset { opacity: .8; }
+  .walrow.unset b { font-size: 17px; line-height: 1; }
+  #walCur { display: grid; grid-auto-rows: 1fr; gap: 4px; }
 </style>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true">
   <div class="grab"></div>
@@ -882,6 +899,26 @@
   </div>
 </div>
 
+<div class="sheet" id="walSheet" role="dialog" aria-modal="true">
+  <div class="grab"></div>
+  <h2 data-i="walTitle"></h2>
+  <p class="hint" data-i="walHint"></p>
+  <div class="field">
+    <label data-i="amount"></label>
+    <div class="amount-wrap">
+      <input class="amount num" id="walAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+      <div class="cur" id="walCur"></div>
+    </div>
+    <div class="conv num" id="walConv"></div>
+  </div>
+  <p class="hint" id="walTopupNote" style="margin:-4px 0 0"></p>
+  <div class="actions">
+    <button class="btn danger" id="walClear" data-i="walClear"></button>
+    <button class="btn ghost" id="walCancel" data-i="cancel"></button>
+    <button class="btn primary" id="walSave" data-i="save"></button>
+  </div>
+</div>
+
 <div class="selbar" id="selbar"><span class="c" id="selCount"></span><button class="btn danger" id="selDelete"></button></div>
 <div class="selbar" id="mineSelbar"><span class="c" id="mineSelCount"></span><button class="btn danger" id="mineSelDelete"></button></div>
 
@@ -922,6 +959,18 @@
   // ---------- i18n ----------
   const I18N = {
     th: {
+      mineSpend: 'จ่าย', mineTopup: 'เติมเงิน',
+      addTopup: 'เติมเงินส่วนตัว', editTopup: 'แก้ไขรายการเติมเงิน',
+      topupDefault: 'เติมเงินส่วนตัว',
+      notePhTopup: 'เช่น แลกเงินที่สนามบิน, กด ATM',
+      topupToast: (m) => `เติมเงิน ${m}`,
+      walTitle: 'เงินส่วนตัวที่เตรียมไว้',
+      walHint: 'เงินที่กันไว้ใช้ส่วนตัวในทริปนี้ คนละกระเป๋ากันกับกองกลาง · หักเฉพาะรายการส่วนตัวเท่านั้น',
+      walTopupNote: (m) => `เติมเพิ่มระหว่างทางอีก ${m} · รวมในยอดเตรียมไว้แล้ว`,
+      walSet: 'ตั้งเงินส่วนตัวที่เตรียมไว้', walClear: 'ล้าง',
+      walPrep: (m) => `เตรียมไว้ ${m}`,
+      walLeft: (m) => `เหลือ ${m}`, walOver: (m) => `ใช้เกิน ${m}`,
+      walSaved: 'บันทึกแล้ว', walCleared: 'ล้างแล้ว',
       grpAll: 'เลือกเพื่อแก้พร้อมกันทั้งหมด',
       grpEdited: (n) => `แก้แล้ว ${n} รายการ`,
       appName: 'PiePot Owner', balance: 'เงินกองกลางคงเหลือ', fundIn: 'รับ', fundOut: 'จ่าย',
@@ -984,6 +1033,18 @@
       addMine: 'รายการส่วนตัว', editMine: 'แก้ไขรายการส่วนตัว', notePhMine: 'เช่น ของฝากแม่, กาแฟ'
     },
     en: {
+      mineSpend: 'Spend', mineTopup: 'Top up',
+      addTopup: 'Top up my own money', editTopup: 'Edit top-up',
+      topupDefault: 'Top-up',
+      notePhTopup: 'e.g. airport exchange, ATM',
+      topupToast: (m) => `Topped up ${m}`,
+      walTitle: 'My own money for this trip',
+      walHint: 'What you set aside to spend on yourself — your own wallet, separate from the group fund, and only your own entries come off it',
+      walTopupNote: (m) => `Plus ${m} topped up along the way — already counted`,
+      walSet: 'Set what you brought for yourself', walClear: 'Clear',
+      walPrep: (m) => `${m} set aside`,
+      walLeft: (m) => `${m} left`, walOver: (m) => `${m} over`,
+      walSaved: 'Saved', walCleared: 'Cleared',
       grpAll: 'Edit all together',
       grpEdited: (n) => `${n} entries updated`,
       appName: 'PiePot Owner', balance: 'Fund balance', fundIn: 'Chip In', fundOut: 'Paid from fund',
@@ -1061,7 +1122,7 @@
     rates: { JPY: 23.0, HKD: 4.6, CNY: 5.0, USD: 36.0 }, cur: {}, // THB per 100 JPY, per 1 HKD/CNY/USD
     members: ['A', 'B'].map((n, i) => ({ id: 'm' + (i + 1), name: n, color: COLORS[i] })),
     entries: [],
-    mine: [], meId: null,
+    mine: [], meId: null, myWallet: null,
     tripCode: null
   });
   let S;
@@ -1084,7 +1145,8 @@
     o.members.forEach(m => { if (!COLORS.includes(m.color) || usedC.has(m.color)) m.color = COLORS.find(c => !usedC.has(c)) || m.color; usedC.add(m.color); });
     if (!Array.isArray(o.mine)) o.mine = [];
     o.mine = o.mine.filter(e => e && e.id && e.orig != null);
-    o.mine.forEach(e => { if (!e.cur) e.cur = 'JPY'; if (!e.cat) e.cat = 'other'; if (e.src !== 'card') e.src = 'cash'; if (!e.date) e.date = '2000-01-01'; });
+    o.mine.forEach(e => { if (!e.cur) e.cur = 'JPY'; if (!e.cat) e.cat = 'other'; if (e.src !== 'card') e.src = 'cash'; if (!e.date) e.date = '2000-01-01'; if (e.type !== 'deposit') e.type = 'expense'; });
+    if (!(o.myWallet && o.myWallet.orig > 0 && o.myWallet.cur)) o.myWallet = null;
     if (o.meId && !o.members.some(m => m.id === o.meId)) o.meId = null;
     if (!o.meId && o.members.length === 1) o.meId = o.members[0].id;
     delete o.rate;
@@ -1182,7 +1244,7 @@
     document.title = (S.trip ? S.trip + ' · ' : '') + t('appName');
     if (window.__ppOwnerLang) window.__ppOwnerLang();
   }
-  function setLang(l) { if (!I18N[l]) return; S.lang = l; save(); applyLang(); renderAll(); }
+  function setLang(l) { if (!I18N[l]) return; S.lang = l; save(); applyLang(); renderAll(); if ($('sheet').classList.contains('on')) renderForm(); }
   // ---------- start screen ----------
   function startTexts() { /* start screen is English-only, text is static in markup */ }
   function dismissStart() { document.getElementById('startScreen').classList.add('hide'); }
@@ -1379,9 +1441,10 @@
 
   // ---------- my slice (personal spending, never part of the fund) ----------
   function calcMine() {
-    const r = { total: 0, byCat: {}, bySrc: { cash: 0, card: 0 }, hasCard: false, n: 0 };
+    const r = { total: 0, in: 0, byCat: {}, bySrc: { cash: 0, card: 0 }, hasCard: false, n: 0 };
     (S.mine || []).forEach(e => {
       const a = amt(e);
+      if (e.type === 'deposit') { r.in += a; return; }
       r.total += a; r.n++;
       r.byCat[e.cat] = (r.byCat[e.cat] || 0) + a;
       r.bySrc[e.src === 'card' ? 'card' : 'cash'] += a;
@@ -1400,6 +1463,7 @@
     $('myTotalTHB').textContent = fmtTHB(total);
     $('myShareV').textContent = hasMe ? money(share) : '—';
     $('myOwnV').textContent = money(m.total);
+    renderWallet(m);
     $('mySrcRow').style.display = m.hasCard ? '' : 'none';
     if (m.hasCard) { $('mySrcCash').textContent = fmt(m.bySrc.cash); $('mySrcCard').textContent = fmt(m.bySrc.card); }
     $('fundLinkBal').textContent = money(r.balance);
@@ -1416,7 +1480,32 @@
     $('myCats').innerHTML = cats.map(c => `<div class="cat"><span class="n">${catName(c)} <span class="hint">${Math.round(c.a / m.total * 100)}%</span></span><span class="a num">${money(c.a)}</span><div class="bar"><i style="width:${c.a / max * 100}%"></i></div></div>`).join('');
     renderMineList();
   }
+  // money set aside, plus anything topped up along the way
+  const walPrepared = (m) => (S.myWallet ? toBase(S.myWallet.orig, S.myWallet.cur) : 0) + m.in;
+  function renderWallet(m) {
+    const prep = walPrepared(m);
+    const bar = $('myWalBar'), row = $('myWalBtn');
+    row.classList.toggle('unset', !prep);
+    if (!prep) {
+      bar.classList.add('off');
+      row.classList.remove('over');
+      $('myWalLbl').textContent = t('walSet');
+      $('myWalVal').textContent = '+';
+      return;
+    }
+    const left = prep - m.total;                     // personal entries only — the group fund is not touched
+    const pct = Math.max(0, Math.min(100, m.total / prep * 100));
+    bar.classList.remove('off');
+    bar.classList.toggle('over', left < 0);
+    row.classList.toggle('over', left < 0);
+    $('myWalFill').style.width = (left < 0 ? 100 : pct) + '%';
+    $('myWalLbl').textContent = t('walPrep', money(prep));
+    $('myWalVal').textContent = left < 0 ? t('walOver', money(-left)) : t('walLeft', money(left));
+  }
   function mineRow(e) {
+    if (e.type === 'deposit') {
+      return `<button class="entry deposit src-cash" data-id="${e.id}">${mineSel ? `<span class="ic ck ${mineIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(DEPOSIT_ICON)}</span>`}<span><span class="t">${esc(e.note || t('topupDefault'))}</span><span class="m">${t('mineTopup')}</span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+    }
     const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
     const src = e.src === 'card' ? 'src-card' : 'src-cash';
     return `<button class="entry ${src}" data-id="${e.id}">${mineSel ? `<span class="ic ck ${mineIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(cat.icon)}</span>`}<span><span class="t">${esc(e.note || catName(cat))}</span><span class="m">${catName(cat)} <span class="pill src-${e.src === 'card' ? 'card' : 'cash'}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span></span></span><span class="amt num">−${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
@@ -1443,9 +1532,9 @@
     list.forEach(e => (days[e.date] = days[e.date] || []).push(e));
     $('mineEntries').innerHTML = Object.keys(days).sort().reverse().map(d => {
       const es = days[d];
-      const spent = es.reduce((a, e) => a + amt(e), 0);
+      const spent = es.filter(e => e.type !== 'deposit').reduce((a, e) => a + amt(e), 0);
       const rows = es.map(e => mineSel ? mineRow(e) : `<div class="swipe-wrap"><button class="swipe-del" data-del="${e.id}">${t('delete')}</button>${mineRow(e)}</div>`).join('');
-      return `<div class="day"><div class="day-h"><span>${niceDate(d)}</span><span class="num">${t('daySpent')} ${money(spent)}</span></div><div class="card">${rows}</div></div>`;
+      return `<div class="day"><div class="day-h"><span>${niceDate(d)}</span><span class="num">${spent ? t('daySpent') + ' ' + money(spent) : ''}</span></div><div class="card">${rows}</div></div>`;
     }).join('');
     $('mineEntries').querySelectorAll('.entry').forEach(b => b.onclick = () => {
       const w = b.closest('.swipe-wrap');
@@ -1628,7 +1717,9 @@
   function openMineSheet(id) {
     const e = id ? (S.mine || []).find(x => x.id === id) : null;
     F.id = e ? e.id : null;
-    F.type = 'expense';
+    F.type = e && e.type === 'deposit' ? 'deposit' : 'expense';
+    F.grpIds = [];
+    $('grpAllRow').style.display = 'none';
     F.cur = e && e.cur ? e.cur : S.base;
     F.cat = e && e.cat ? e.cat : 'shop';
     F.paidBy = 'fund'; F.split = []; F.by = null;
@@ -1689,21 +1780,56 @@
   }
   function showSheet(id) { lockScroll(); $(id).scrollTop = 0; $('scrim').classList.add('on'); $(id).classList.add('on'); fitViewport(); }
 
-  function closeSheet() { unlockScroll(); $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); }
+  function closeSheet() { unlockScroll(); $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); $('walSheet').classList.remove('on'); }
+
+  // ---------- money set aside for myself ----------
+  let walCur = 'THB';
+  function renderWalSheet() {
+    const curs = [...new Set([S.base, 'THB', walCur])];
+    $('walCur').innerHTML = curs.map(c => `<button type="button" data-cur="${c}" class="${walCur === c ? 'on' : ''}">${c}</button>`).join('');
+    $('walCur').querySelectorAll('button').forEach(b => b.onclick = () => { walCur = b.dataset.cur; renderWalSheet(); });
+    const v = amtExprVal($('walAmount').value);
+    $('walConv').textContent = (v > 0) ? [walCur !== S.base ? money(toBase(v, walCur)) : '', approx(toBase(v, walCur))].filter(Boolean).join(' · ') : '';
+    const inAmt = calcMine().in;
+    $('walTopupNote').textContent = inAmt > 0 ? t('walTopupNote', money(inAmt)) : '';
+  }
+  function openWalSheet() {
+    if (window.__ppMember) { toast(t('shViewerToast')); return; }
+    walCur = S.myWallet ? S.myWallet.cur : S.base;
+    $('walAmount').value = S.myWallet ? fmtAmtExpr(String(S.myWallet.orig)) : '';
+    $('walClear').style.display = S.myWallet ? '' : 'none';
+    renderWalSheet();
+    showSheet('walSheet');
+    if (!S.myWallet) setTimeout(() => $('walAmount').focus(), 300);
+  }
+  $('walAmount').addEventListener('input', renderWalSheet);
+  $('walCancel').onclick = closeSheet;
+  $('walClear').onclick = () => { S.myWallet = null; save(); closeSheet(); renderAll(); toast(t('walCleared')); };
+  $('walSave').onclick = () => {
+    const v = amtExprVal($('walAmount').value);
+    if (!(v > 0)) { toast(t('needAmount')); $('walAmount').focus(); return; }
+    S.myWallet = { orig: v, cur: walCur };
+    save(); closeSheet(); renderAll(); toast(t('walSaved'));
+  };
+  $('myWalBtn').onclick = openWalSheet;
   $('fab').onclick = () => openSheet(null, curView === 'mine' ? 'mine' : 'fund');
   $('scrim').onclick = closeSheet; $('fCancel').onclick = closeSheet;
 
   function renderForm() {
     const mineMode = F.mode === 'mine';
     const isExp = F.type === 'expense';
-    $('typeSeg').style.display = mineMode ? 'none' : '';
+    $('typeSeg').style.display = '';
     $('typeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === F.type));
+    const segB = $('typeSeg').querySelectorAll('button');
+    segB[0].textContent = mineMode ? t('mineSpend') : t('typeExpense');
+    segB[1].textContent = mineMode ? t('mineTopup') : t('typeDeposit');
+    if (mineMode) $('sheetTitle').textContent = F.id ? (isExp ? t('editMine') : t('editTopup')) : (isExp ? t('addMine') : t('addTopup'));
     $('catField').style.display = isExp ? '' : 'none';
     $('paidField').style.display = (isExp && !mineMode) ? '' : 'none';
     const solo = S.members.length === 1;
     $('splitField').style.display = (isExp && !mineMode && !solo) ? '' : 'none';
     $('depField').style.display = (isExp || mineMode || solo) ? 'none' : '';
-    $('fNote').placeholder = mineMode ? t('notePhMine') : isExp ? t('notePhExp') : t('notePhDep');
+    $('fNote').placeholder = mineMode ? (isExp ? t('notePhMine') : t('notePhTopup')) : isExp ? t('notePhExp') : t('notePhDep');
     const curs = [...new Set([S.base, 'THB', F.cur])];
     $('fCur').innerHTML = curs.map(c => `<button data-cur="${c}" class="${F.cur === c ? 'on' : ''}">${c}</button>`).join('');
     $('fCur').querySelectorAll('button').forEach(b => b.onclick = () => { F.cur = b.dataset.cur; renderForm(); });
@@ -1718,7 +1844,7 @@
     $('fDep').innerHTML = (F.id ? '' : `<button data-d="all" class="${F.by === 'all' ? 'on' : ''}">${t('everyone')}</button>`) + S.members.map(m => `<button data-d="${m.id}" class="${F.by === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
     $('depHint').textContent = F.by === 'all' ? t('everyoneHint', S.members.length) : '';
     $('fDep').querySelectorAll('button').forEach(b => b.onclick = () => { F.by = b.dataset.d; renderForm(); });
-    $('srcField').style.display = (mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none';
+    $('srcField').style.display = (mineMode && !isExp) ? 'none' : ((mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none');
     $('fSrc').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.s === F.src); b.onclick = () => { F.src = b.dataset.s; renderForm(); }; });
     updateConv();
   }
@@ -1803,17 +1929,18 @@
     const amount = amountBase();
     if (!(orig > 0) || !amount) { toast(t('needAmount')); $('fAmount').focus(); return; }
     if (F.mode === 'mine') {
+      const isIn = F.type === 'deposit';
       const me = {
-        id: F.id || uid(), cur: F.cur, orig, amount: Math.round(amount * 100) / 100,
+        id: F.id || uid(), type: isIn ? 'deposit' : 'expense', cur: F.cur, orig, amount: Math.round(amount * 100) / 100,
         note: $('fNote').value.trim(), date: $('fDate').value || today(),
-        cat: F.cat, src: F.src === 'card' ? 'card' : 'cash', own: true, ts: Date.now()
+        cat: F.cat, src: isIn ? 'cash' : (F.src === 'card' ? 'card' : 'cash'), own: true, ts: Date.now()
       };
       S.lastSrcMine = me.src;
       S.mine = S.mine || [];
       const j = S.mine.findIndex(x => x.id === me.id);
       if (j >= 0) { me.ts = S.mine[j].ts || me.ts; S.mine[j] = me; } else S.mine.push(me);
       save(); closeSheet(); renderAll();
-      toast(j >= 0 ? t('edited') : t('savedToast', money(amount)));
+      toast(j >= 0 ? t('edited') : isIn ? t('topupToast', money(amount)) : t('savedToast', money(amount)));
       return;
     }
     if (F.type === 'expense' && !F.split.length) { toast(t('needSplit')); return; }
@@ -2107,7 +2234,7 @@
   $('ntCancel').onclick = closeSheet;
   $('ntGo').onclick = () => {
     if (S.entries.length || (S.mine || []).length || (S.trip || '').trim()) { H.unshift(snapshot()); saveHist(); }
-    S = { ...S, trip: $('ntName').value.trim(), entries: [], mine: [] };
+    S = { ...S, trip: $('ntName').value.trim(), entries: [], mine: [], myWallet: null };
     save(); closeSheet(); renderAll(); showView('sum'); toast(t('newTripDone'));
   };
   function renderHistory() {
@@ -2305,7 +2432,7 @@
   const packS = () => {
     const o = JSON.parse(JSON.stringify(S));
     delete o.tripCode; delete o.adminName;
-    o.mine = []; o.meId = null;
+    o.mine = []; o.meId = null; o.myWallet = null;
     return JSON.stringify(o);
   };
 
@@ -2332,9 +2459,11 @@
     const lang = S.lang, pal = S.palette;
     const keepMine = Array.isArray(S.mine) ? S.mine : [];
     const keepMe = S.meId;
+    const keepWal = S.myWallet;
     S = migrate(o);
     S.lang = lang; S.palette = pal;
     S.mine = keepMine; S.meId = keepMe && S.members.some(m => m.id === keepMe) ? keepMe : null;
+    S.myWallet = keepWal;
     S.tripCode = d.__code; S.adminName = d.adminName || '';
     lastAt = d.at || Date.now();
     applyPalette(); applyLang(); renderAll(); updateBar();
