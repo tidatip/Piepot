@@ -725,7 +725,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.5</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.6</p>
   </main>
 </div>
 
@@ -758,6 +758,13 @@
   .walrow.unset { opacity: .8; }
   .walrow.unset b { font-size: 17px; line-height: 1; }
   #walCur { display: grid; grid-auto-rows: 1fr; gap: 4px; }
+</style>
+<style>
+  #shareDayField { margin: 0 0 14px; }
+  #shareDays { max-height: 132px; overflow: auto; }
+  .sp-bf, .sp-cf { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; }
+  .sp-bf { color: var(--muted); margin-top: 2px; }
+  .sp-cf { color: var(--accent); font-weight: 600; margin: 4px 0 2px; padding-top: 5px; border-top: 1px solid var(--line); }
 </style>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true">
   <div class="grab"></div>
@@ -842,8 +849,11 @@
 <div class="sheet" id="shareSheet" role="dialog" aria-modal="true">
   <div class="grab"></div>
   <h2 data-i="shareTitle"></h2>
+  <div class="field" id="shareDayField" style="display:none">
+    <label data-i="shareScope"></label>
+    <div class="choices" id="shareDays"></div>
+  </div>
   <div class="share-prev" id="sharePrev"></div>
-  <label class="imgopt"><input type="checkbox" id="imgPeople"><span data-i="imgInclPeople"></span></label>
   <div class="actions">
     <button class="btn ghost" id="shareClose" data-i="shareClose"></button>
     <button class="btn ghost" id="shareImg" data-i="imgBtn"></button>
@@ -959,6 +969,10 @@
   // ---------- i18n ----------
   const I18N = {
     th: {
+      shareScope: 'ช่วงที่จะสรุป', shareAllDays: 'ทั้งทริป',
+      sumBf: 'ยกมา', sumCf: 'ยกไป',
+      sumDayIn: 'เข้ากอง', sumDayOut: 'จ่ายจากกอง',
+      sumDaily: (d) => `สรุปรายวัน · ${d}`,
       mineSpend: 'จ่าย', mineTopup: 'เติมเงิน',
       addTopup: 'เติมเงินส่วนตัว', editTopup: 'แก้ไขรายการเติมเงิน',
       topupDefault: 'เติมเงินส่วนตัว',
@@ -1033,6 +1047,10 @@
       addMine: 'รายการส่วนตัว', editMine: 'แก้ไขรายการส่วนตัว', notePhMine: 'เช่น ของฝากแม่, กาแฟ'
     },
     en: {
+      shareScope: 'What to summarise', shareAllDays: 'Whole trip',
+      sumBf: 'Opening', sumCf: 'Closing',
+      sumDayIn: 'In', sumDayOut: 'Out',
+      sumDaily: (d) => `Daily summary · ${d}`,
       mineSpend: 'Spend', mineTopup: 'Top up',
       addTopup: 'Top up my own money', editTopup: 'Edit top-up',
       topupDefault: 'Top-up',
@@ -2017,48 +2035,85 @@
   function entryLine(e) {
     return `${e.type === 'deposit' ? '+' : '−'}${money(amt(e))}${e.cur !== S.base ? ` (${moneyC(e.orig, e.cur)})` : ''} ${e.note || (e.type === 'deposit' ? t('depositDefault') : catName(CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1]))}${e.type === 'deposit' && member(e.by) ? ` — ${mname(e.by)}` : ''}${e.type === 'expense' && e.paidBy !== 'fund' ? ' ' + t('sumAdvanced', mname(e.paidBy)) : ''}${e.type === 'expense' && advBase(e) > 0 ? ' ' + t('sumAdvancedPart', mname(e.adv.by), money(advBase(e))) : ''}`;
   }
+  // what each entry does to the fund — mirrors calc() exactly, so the days reconcile to the balance
+  const fundDelta = (e) => e.type === 'deposit' ? amt(e) : (e.paidBy === 'fund' ? -(amt(e) - advBase(e)) : 0);
   function summaryData() {
     const r = calc();
     const head = [t('sumTitle', S.trip || t('appName'), S.base), `${t('sumBalance')} ${money(r.balance)}${S.base === 'THB' ? '' : ` (≈ ${fmtTHB(r.balance)} THB)`}`, `${t('sumIn')} ${money(r.fundIn)} · ${t('sumOut')} ${money(r.fundOut)} · ${t('sumSpent')} ${money(r.spent)}`];
     const people = S.members.map(m => { const p = r.per[m.id]; return t('sumPerson', m.name, money(p.in), p.paid ? money(p.paid) : '', money(p.share), p.net > 0.5 ? t('getBack') : p.net < -0.5 ? t('sumPayMore') : '', Math.abs(p.net) <= 0.5 ? '0' : money(Math.abs(p.net))); });
     const byDay = {};
     S.entries.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.ts || 0) - (b.ts || 0)).forEach(e => { (byDay[e.date] = byDay[e.date] || []).push(e); });
-    const days = Object.keys(byDay).sort().map(d => ({
-      label: niceDate(d),
-      spent: byDay[d].reduce((s, e) => s + (e.type === 'expense' ? amt(e) : 0), 0),
-      lines: byDay[d].map(entryLine)
-    }));
-    return { head, people, days };
+    let run = 0;
+    let days = Object.keys(byDay).sort().map(d => {
+      const es = byDay[d];
+      let dIn = 0, dOut = 0;
+      es.forEach(e => { const v = fundDelta(e); if (v > 0) dIn += v; else dOut -= v; });
+      const bf = run;
+      run += dIn - dOut;
+      return {
+        date: d, label: niceDate(d), bf, cf: run, dIn, dOut,
+        spent: es.reduce((s, e) => s + (e.type === 'expense' ? amt(e) : 0), 0),
+        lines: es.map(entryLine)
+      };
+    });
+    const one = shareDay ? days.find(x => x.date === shareDay) : null;
+    if (one) {
+      days = [one];
+      head.length = 0;
+      head.push(t('sumTitle', S.trip || t('appName'), S.base).replace(/—.*$/, '').trim() + ' — ' + t('sumDaily', one.label) + ` (${S.base})`);
+      head.push(`${t('sumCf')} ${money(one.cf)}${S.base === 'THB' ? '' : ` (≈ ${fmtTHB(one.cf)} THB)`}`);
+
+    }
+    return { head, people, days, one: !!one };
   }
   function summaryText() {
     const d = summaryData();
-    const lines = [...d.head, '', ...d.people];
+    const lines = [...d.head];
     if (d.days.length) {
       lines.push('', t('sumAll') + ':');
-      d.days.forEach(day => { lines.push(`— ${day.label}${day.spent > 0.005 ? ` · ${t('sumDaySpent', money(day.spent))}` : ''} —`); lines.push(...day.lines); });
+      d.days.forEach(day => {
+        lines.push(`— ${day.label}${day.spent > 0.005 ? ` · ${t('sumDaySpent', money(day.spent))}` : ''} —`);
+        lines.push(`${t('sumBf')} ${money(day.bf)}`);
+        lines.push(...day.lines);
+        lines.push(`${t('sumDayIn')} ${money(day.dIn)} · ${t('sumDayOut')} ${money(day.dOut)} · ${t('sumCf')} ${money(day.cf)}`);
+      });
     }
     return lines.join('\n');
   }
+  function renderShareDays() {
+    const st = shareState || S;
+    const ds = [...new Set((st.entries || []).map(e => e.date))].sort().reverse();
+    $('shareDayField').style.display = ds.length > 1 ? '' : 'none';
+    if (ds.length <= 1) { shareDay = null; return; }
+    if (shareDay && !ds.includes(shareDay)) shareDay = null;
+    $('shareDays').innerHTML = [`<button type="button" data-d="" class="${shareDay ? '' : 'on'}">${esc(t('shareAllDays'))}</button>`]
+      .concat(ds.map(d => `<button type="button" data-d="${d}" class="${shareDay === d ? 'on' : ''}">${esc(withState(st, () => niceDate(d)))}</button>`)).join('');
+    $('shareDays').querySelectorAll('button').forEach(b => b.onclick = () => { shareDay = b.dataset.d || null; renderShare(); });
+  }
   function renderShare() {
+    renderShareDays();
     const d = withState(shareState || S, summaryData);
     let h = `<div class="sp-title">${esc(d.head[0])}</div>` + d.head.slice(1).map(x => `<div class="sp-line">${esc(x)}</div>`).join('');
-    h += `<div class="sp-sec">${d.people.map(p => `<div class="sp-line">${esc(p)}</div>`).join('')}</div>`;
     if (d.days.length) {
       h += `<div class="sp-sec"><span class="sp-title">${esc(t('sumAll'))}</span></div>`;
+      const mny = (v) => withState(shareState || S, () => money(v));
       d.days.forEach(day => {
-        h += `<div class="sp-day">${esc(day.label)}${day.spent > 0.005 ? ` <small>· ${esc(t('sumDaySpent', money(day.spent)))}</small>` : ''}</div>`;
+        h += `<div class="sp-day">${esc(day.label)}${day.spent > 0.005 ? ` <small>· ${esc(withState(shareState || S, () => t('sumDaySpent', money(day.spent))))}</small>` : ''}</div>`;
+        h += `<div class="sp-bf"><span>${esc(t('sumBf'))}</span><span>${esc(mny(day.bf))}</span></div>`;
         h += day.lines.map(l => `<div class="sp-line${l.charAt(0) === '+' ? ' in' : ' ex'}">${esc(l)}</div>`).join('');
+        h += `<div class="sp-cf"><span>${esc(t('sumCf'))}</span><span>${esc(mny(day.cf))}</span></div>`;
       });
     }
     $('sharePrev').innerHTML = h;
   }
-  $('shareSummary').onclick = () => { shareState = null; renderShare(); showSheet('shareSheet'); };
+  let shareDay = null;
+  $('shareSummary').onclick = () => { shareState = null; shareDay = null; renderShare(); showSheet('shareSheet'); };
   $('shareClose').onclick = closeSheet;
   $('shareCopy').onclick = () => copyText(withState(shareState || S, summaryText), t('summaryCopied'));
 
   // ---------- summary image ----------
   let imgBlob = null;
-  const imgFileName = (st) => ((st.trip || 'PiePot').replace(/[\\/:*?"<>|]/g, '').trim() || 'PiePot') + '-summary.png';
+  const imgFileName = (st) => ((st.trip || 'PiePot').replace(/[\\/:*?"<>|]/g, '').trim() || 'PiePot') + '-summary' + (shareDay ? '-' + shareDay : '') + '.png';
   async function buildSummaryImage(inclPeople) {
     const st = shareState || S;
     const isTH = T === I18N.th;
@@ -2073,7 +2128,8 @@
     const data = withState(st, () => {
       const d = summaryData();
       const base = S.base, trip = S.trip;
-      const rows = S.entries.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.ts || 0) - (b.ts || 0)).map(e => {
+      const keep = shareDay ? S.entries.filter(e => e.date === shareDay) : S.entries;
+      const rows = keep.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.ts || 0) - (b.ts || 0)).map(e => {
         const dep = e.type === 'deposit';
         let det;
         if (dep) { det = (e.note || t('depositDefault')) + (member(e.by) ? ' — ' + mname(e.by) : ''); }
@@ -2084,7 +2140,7 @@
           else if (advBase(e) > 0) det += ' ' + t('sumAdvancedPart', mname(e.adv.by), money(advBase(e)));
         }
         if (e.cur !== base) det += ' · ' + moneyC(e.orig, e.cur);
-        return { date: e.date, det: truncDet(det), amt: fmtA(amt(e)), dep };
+        return { date: e.date, det: truncDet(det), amt: fmtA(amt(e)), dep, noFund: !dep && e.paidBy !== 'fund' };
       });
       const r2 = calc();
       const peopleRows = S.members.map(m => {
@@ -2115,17 +2171,25 @@
     // column widths measured with the real fonts, so nothing can overflow
     const dateF = FONT(REG, 25), detF = FONT(REG, 26), amtF = FONT(MED, 26), thF = FONT(MED, 25);
     const amtHead = `${t('amount')} (${data.base})`;
-    let dateW = tw(t('date'), thF), detW = tw(t('note'), thF), amtW = tw(amtHead, thF);
+    let detW = tw(t('note'), thF), amtW = tw(amtHead, thF);
     data.rows.forEach(r => {
       r.amtText = r.dep ? r.amt : `(${r.amt})`;
       r.aw = tw(r.amtText, amtF);
-      dateW = Math.max(dateW, tw(dShort(r.date), dateF));
       detW = Math.max(detW, tw(r.det, detF));
       amtW = Math.max(amtW, r.aw);
     });
+    const dayHdF = FONT(MED, 29), dayBfF = FONT(REG, 25), dayFtF = FONT(REG, 24), dayCfF = FONT(BOLD, 27);
+    const bfTxt = (d) => `${t('sumBf')} ${fmtA(d.bf)}`;
+    const cfTxt = (d) => `${t('sumCf')} ${fmtA(d.cf)}`;
+    const ftTxt = (d) => `${t('sumDayIn')} ${fmtA(d.dIn)} · ${t('sumDayOut')} ${fmtA(d.dOut)}`;
+    let dayW = 0;
+    data.d.days.forEach(d => {
+      dayW = Math.max(dayW, tw(d.label, dayHdF) + GAP + tw(bfTxt(d), dayBfF), tw(ftTxt(d), dayFtF) + GAP + tw(cfTxt(d), dayCfF));
+    });
     const amtHeadW = tw(`${t('amount')} (${data.base})`, thF);
-    dateW = Math.ceil(dateW); detW = Math.ceil(detW); amtW = Math.ceil(amtW);
-    let W = P * 2 + dateW + GAP + detW + GAP + amtW;
+    const dateW = 0;
+    detW = Math.ceil(detW); amtW = Math.ceil(amtW);
+    let W = Math.max(P * 2 + detW + GAP + amtW, P * 2 + Math.ceil(dayW));
     W = Math.max(W, 780);
     if (W > 1400) { detW -= W - 1400; W = 1400; }
     const CW = W - P * 2;
@@ -2160,37 +2224,46 @@
     let balS = 38;
     while (balS > 26 && tw(data.d.head[1], FONT(MED, balS)) > CW) balS -= 2;
     addText(data.d.head[1], { w: MED, s: balS, c: C.accent, gap: 30 });
-    const ioParts = data.d.head[2].split(' · ');
-    addText(ioParts.slice(0, 2).join(' · '), { s: 28, c: C.muted, gap: 14 });
-    if (ioParts[2]) addText(ioParts[2], { s: 28, c: C.muted, gap: 4 });
-    if (inclPeople && data.d.people.length) {
-      addHr();
-      addText(t('whereEveryone'), { w: MED, s: 32, gap: 0 });
-      const pplF = FONT(REG, 27);
-      data.peopleRows.forEach(pr => {
-        addText(pr.prefix + pr.line1, { s: 27, gap: 18, ind: 4 });
-        addText(pr.line2, { s: 27, gap: 5, ind: 4 + Math.ceil(tw(pr.prefix, pplF)) });
-      });
+    const ioParts = (data.d.head[2] || '').split(' · ').filter(Boolean);
+    if (ioParts.length) {
+      addText(ioParts.slice(0, 2).join(' · '), { s: 28, c: C.muted, gap: 14 });
+      if (ioParts[2]) addText(ioParts[2], { s: 28, c: C.muted, gap: 4 });
     }
     if (data.rows.length) {
       addHr();
-      addText(t('sumAll'), { w: MED, s: 32, gap: 0 });
-      const X_DET = P + dateW + GAP, X_AMT = P + CW;
-      ops.push({ gap: 26, h: 50, draw: (x, y) => {
-        x.font = thF; x.fillStyle = C.muted;
-        x.textAlign = 'left'; x.fillText(t('date'), P, y); x.fillText(t('note'), X_DET, y);
-        x.fillText(amtHead, X_AMT - amtHeadW, y);
-        x.fillStyle = C.line; x.fillRect(P, y + 44, CW, 2);
-      } });
-      data.rows.forEach(r => {
-        const rh = 26 * LH + 22;
-        ops.push({ gap: 0, h: rh, draw: (x, y) => {
-          const ty = y + 11;
-          x.font = dateF; x.fillStyle = C.muted; x.textAlign = 'left'; x.fillText(dShort(r.date), P, ty + 1);
-          x.font = detF; x.fillStyle = C.ink; x.fillText(r.det, X_DET, ty);
-          x.font = amtF; x.fillStyle = r.dep ? C.inC : C.outC;
-          x.fillText(r.amtText, X_AMT - r.aw, ty);
-          x.globalAlpha = .55; x.fillStyle = C.line; x.fillRect(P, y + rh - 1, CW, 1); x.globalAlpha = 1;
+      if (!data.d.one) addText(t('sumAll'), { w: MED, s: 32, gap: 0 });
+      const X_AMT = P + CW;
+      const byDate = {};
+      data.rows.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); });
+      data.d.days.forEach((day, di) => {
+        const rs = byDate[day.date] || [];
+        // day header: date on the left, balance brought forward on the right
+        ops.push({ gap: di === 0 ? 26 : 30, h: 42, draw: (x, y) => {
+          x.textAlign = 'left';
+          x.font = dayHdF; x.fillStyle = C.ink; x.fillText(day.label, P, y);
+          x.font = dayBfF; x.fillStyle = C.muted;
+          const s = bfTxt(day); x.fillText(s, X_AMT - tw(s, dayBfF), y + 4);
+          x.fillStyle = C.line; x.fillRect(P, y + 38, CW, 2);
+        } });
+        rs.forEach(r => {
+          const rh = 26 * LH + 20;
+          ops.push({ gap: 0, h: rh, draw: (x, y) => {
+            const ty = y + 10;
+            x.textAlign = 'left';
+            x.font = detF; x.fillStyle = r.noFund ? C.muted : C.ink; x.fillText(r.det, P, ty);
+            x.font = amtF; x.fillStyle = r.dep ? C.inC : C.outC;
+            if (r.noFund) x.globalAlpha = .6;
+            x.fillText(r.amtText, X_AMT - r.aw, ty);
+            x.globalAlpha = 1;
+            x.globalAlpha = .45; x.fillStyle = C.line; x.fillRect(P, y + rh - 1, CW, 1); x.globalAlpha = 1;
+          } });
+        });
+        // day footer: what moved in and out, then the balance carried forward
+        ops.push({ gap: 12, h: 40, draw: (x, y) => {
+          x.textAlign = 'left';
+          x.font = dayFtF; x.fillStyle = C.muted; x.fillText(ftTxt(day), P, y + 4);
+          x.font = dayCfF; x.fillStyle = C.accent;
+          const s = cfTxt(day); x.fillText(s, X_AMT - tw(s, dayCfF), y);
         } });
       });
     }
@@ -2212,7 +2285,7 @@
   }
   $('shareImg').onclick = async () => {
     try {
-      imgBlob = await buildSummaryImage($('imgPeople').checked);
+      imgBlob = await buildSummaryImage();
       const img = $('imgOut');
       if (img.dataset.u) URL.revokeObjectURL(img.dataset.u);
       const u = URL.createObjectURL(imgBlob); img.src = u; img.dataset.u = u;
@@ -2507,7 +2580,7 @@
     if (pal && pal.closest('.card')) pal.closest('.card').classList.add('pp-keep');
   })();
 
-  function renderShare() {
+  function renderShareCard() {
     document.getElementById('shTitle').textContent = t('shTitle');
     document.getElementById('shHint').textContent = t('shHint');
     document.getElementById('shOnBtn').textContent = t('shOn');
@@ -2531,14 +2604,14 @@
         adminUid: myUid, adminMemberId: S.meId, adminName: adminName(),
         S: packS(), at: Date.now(), created: Date.now()
       });
-      S.tripCode = code; lastAt = Date.now(); save(); renderShare();
+      S.tripCode = code; lastAt = Date.now(); save(); renderShareCard();
       copyLink();
     } catch (e) { toast(t('shNoNet')); }
   };
   document.getElementById('shOffBtn').onclick = () => {
     if (!confirm(t('shOffConfirm'))) return;
     const code = S.tripCode;
-    S.tripCode = null; save(); renderShare();
+    S.tripCode = null; save(); renderShareCard();
     if (unsub) { unsub(); unsub = null; }
     if (db && code) FS.updateDoc(FS.doc(db, 'trips', code), { S: '', at: Date.now() }).catch(() => {});
     toast(t('shOffDone'));
@@ -2569,7 +2642,7 @@
     sh.querySelector('#impNo').onclick = close;
     sh.querySelector('#impYes').onclick = () => {
       S = migrate(old); S.tripCode = null; save();
-      applyPalette(); applyLang(); renderAll(); renderShare();
+      applyPalette(); applyLang(); renderAll(); renderShareCard();
       close(); toast(t('impDone'));
     };
     showSheet('impSheet');
@@ -2645,7 +2718,7 @@
   }
 
   // ---------- boot ----------
-  window.__ppOwnerLang = () => { renderShare(); document.getElementById('scanBtnTxt').textContent = t('scanBtn'); };
+  window.__ppOwnerLang = () => { renderShareCard(); document.getElementById('scanBtnTxt').textContent = t('scanBtn'); };
 
   (async function ownerBoot() {
     document.getElementById('scanBtnTxt').textContent = t('scanBtn');
@@ -2656,12 +2729,12 @@
       try {
         await fbInit();
         const snap = await FS.getDoc(FS.doc(db, 'trips', urlCode));
-        if (!snap.exists()) { toast(t('shGone')); renderShare(); return; }
+        if (!snap.exists()) { toast(t('shGone')); renderShareCard(); return; }
         const d = snap.data(); d.__code = urlCode;
         if (d.adminUid === myUid) {
           S.tripCode = urlCode; save();
           if (d.S) adopt(d);
-          renderShare();
+          renderShareCard();
         } else {
           MEMBER = true; window.__ppMember = true;
           document.body.classList.add('pp-member');
@@ -2671,7 +2744,7 @@
           document.body.classList.remove('v-mine');
         }
       } catch (e) { toast(t('shNoNet')); }
-      renderShare();
+      renderShareCard();
       return;
     }
 
@@ -2680,7 +2753,7 @@
     } else if (!S.entries.length) {
       afterStart(askImport);
     }
-    renderShare();
+    renderShareCard();
   })();
 
   // ---------- first run ----------
