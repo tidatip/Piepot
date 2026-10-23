@@ -328,7 +328,7 @@
   .hero.mine .split .row { margin-top: 5px; font-size: 14px; opacity: .92; }
   .hero.mine .split .row:first-child { margin-top: 0; }
   .hero.mine .split .row b { font-weight: 600; opacity: 1; }
-  .hero.mine .split #mySrcRow { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--mine-rule); font-size: 13px; opacity: .8; }
+  .hero.mine .split #mySrcRow { margin-top: 0; padding-top: 0; border-top: 0; font-size: 13px; opacity: .8; }
   .hero.mine .split #mySrcRow b { font-weight: 500; }
   #myCats .cat .bar i { background: var(--in); }
   body.v-mine #hero { display: none; }
@@ -644,16 +644,15 @@
       <div class="big num"><span id="myTotal">0</span> <small class="cc"></small></div>
       <div class="thb num">&#8776; <span id="myTotalTHB">0</span> THB</div>
       <div class="split">
-        <div class="row num"><span data-i="myShare"></span><b id="myShareV">0</b></div>
-        <div class="row num"><span data-i="myOwn"></span><b id="myOwnV">0</b></div>
         <div class="row num" id="mySrcRow" style="display:none"><span data-i="paidWith"></span><b><span data-i="srcCash"></span> <span id="mySrcCash">0</span> · <span data-i="srcCard"></span> <span id="mySrcCard">0</span></b></div>
       </div>
       <div class="mywal" id="myWalWrap">
-        <div class="bar" id="myWalBar"><i id="myWalFill"></i></div>
-        <button type="button" class="walrow" id="myWalBtn"><span id="myWalLbl"></span><b class="num" id="myWalVal"></b></button>
+        <div class="bar" id="myWalBarCash"><i id="myWalFillCash"></i></div>
+        <button type="button" class="walrow" id="myWalBtnCash"><span id="myWalLblCash"></span><b class="num" id="myWalValCash"></b></button>
+        <div class="bar" id="myWalBarCard"><i id="myWalFillCard"></i></div>
+        <button type="button" class="walrow" id="myWalBtnCard"><span id="myWalLblCard"></span><b class="num" id="myWalValCard"></b></button>
       </div>
     </section>
-    <p class="mine-note" id="mineNote"></p>
     <p class="mine-note" id="minePrivate"></p>
 
     <div class="section-h" id="myCatHead"><h2 data-i="myByCat"></h2><span class="hint" id="myCatCount"></span></div>
@@ -725,7 +724,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.6</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.7</p>
   </main>
 </div>
 
@@ -756,6 +755,9 @@
   .walrow b { font-weight: 600; opacity: 1; }
   .walrow.over b { color: #7E2412; }
   .walrow.unset { opacity: .8; }
+  .walrow { font-size: 13px; }
+  .walrow > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hero.mine .mywal .walrow + .bar { margin-top: 13px; }
   .walrow.unset b { font-size: 17px; line-height: 1; }
   #walCur { display: grid; grid-auto-rows: 1fr; gap: 4px; }
 </style>
@@ -822,7 +824,7 @@
   </div>
 
   <div class="field" id="srcField">
-    <label data-i="srcLabel"></label>
+    <label id="srcLbl"></label>
     <div class="seg" id="fSrc">
       <button data-s="cash" data-i="srcCash"></button>
       <button data-s="card" data-i="srcCard"></button>
@@ -911,7 +913,7 @@
 
 <div class="sheet" id="walSheet" role="dialog" aria-modal="true">
   <div class="grab"></div>
-  <h2 data-i="walTitle"></h2>
+  <h2 id="walTitleH"></h2>
   <p class="hint" data-i="walHint"></p>
   <div class="field">
     <label data-i="amount"></label>
@@ -982,6 +984,9 @@
       walHint: 'เงินที่กันไว้ใช้ส่วนตัวในทริปนี้ คนละกระเป๋ากันกับกองกลาง · หักเฉพาะรายการส่วนตัวเท่านั้น',
       walTopupNote: (m) => `เติมเพิ่มระหว่างทางอีก ${m} · รวมในยอดเตรียมไว้แล้ว`,
       walSet: 'ตั้งเงินส่วนตัวที่เตรียมไว้', walClear: 'ล้าง',
+      walSetCash: 'ตั้งเงินสดที่เตรียมไว้', walSetCard: 'ตั้งวงเงินบัตรที่เตรียมไว้',
+      walTitleCash: 'เงินสดส่วนตัวที่เตรียมไว้', walTitleCard: 'วงเงินบัตรส่วนตัวที่เตรียมไว้',
+      walPrepSrc: (s, m) => `${s} · เตรียมไว้ ${m}`,
       walPrep: (m) => `เตรียมไว้ ${m}`,
       walLeft: (m) => `เหลือ ${m}`, walOver: (m) => `ใช้เกิน ${m}`,
       walSaved: 'บันทึกแล้ว', walCleared: 'ล้างแล้ว',
@@ -1012,7 +1017,7 @@
       navSum: 'สรุป', navList: 'รายการ', navSet: 'ตั้งค่า',
       addEntry: 'เพิ่มรายการ', editEntry: 'แก้ไขรายการ', typeExpense: 'จ่าย', typeDeposit: 'รับ', amount: 'จำนวนเงิน', note: 'รายละเอียด',
       notePhExp: 'เช่น ราเมงกลางวัน, ค่าน้ำมัน, ตั๋ว Alpine Route', notePhDep: 'เช่น รับเงินก่อนออกเดินทาง, รับเพิ่มรอบ 2',
-      srcLabel: 'แหล่งเงิน', srcCash: 'เงินสด', srcCard: 'บัตร', srcRemaining: 'คงเหลือ',
+      srcLabel: 'แหล่งเงิน', srcInto: 'เติมเข้า', srcCash: 'เงินสด', srcCard: 'บัตร', srcRemaining: 'คงเหลือ',
       category: 'หมวด', paidBy: 'ใครจ่าย', paidByHint: 'ถ้าเพื่อนสำรองจ่ายเอง เลือกชื่อคนนั้น ระบบจะคิดคืนให้ตอนปิดทริป', splitAmong: 'หารกัน', depositBy: 'รับจากใคร', date: 'วันที่',
       delete: 'ลบ', cancel: 'ยกเลิก', save: 'บันทึก', undo: 'เลิกทำ', fund: 'กองกลาง', everyone: 'ทุกคน', shortTitle: (bal, short) => `กองกลางเหลือ ${bal} ไม่พอ ขาดอีก ${short}`, shortNone: 'กองกลางพอจ่าย แต่มีคนสำรองจ่ายบางส่วน', advBy: 'ใครสำรองจ่ายส่วนที่ขาด', advAmt: 'ยอดที่สำรองจ่าย', fundPart: 'ส่วนที่กองจ่าย', advHintOn: (n, v) => `${n} สำรอง ${v} จะได้คืนตอนปิดทริป`, advHintOff: 'ถ้าไม่เลือกใคร จะถือว่ากองกลางจ่ายทั้งหมด (ยอดกองติดลบ)', fromFundPlus: (f, n, v) => `กอง ${f} + ${n} สำรอง ${v}`, sumAdvancedPart: (n, v) => `(${n} สำรอง ${v})`, everyoneHint: (n) => `บันทึกแยกเป็นรายการของแต่ละคน ${n} คน ยอดเท่ากัน`, depositedAllToast: (v, n) => `รับ ${v} จากทุกคน (${n} รายการ) แล้ว`,
       getBack: 'ได้คืน', even: '', net: 'สุทธิ',
@@ -1037,7 +1042,7 @@
       firstRun: 'เริ่มจากตั้งชื่อทริป สมาชิก และสกุลเงิน แล้วค่อยกด + เพื่อบันทึก',
       months: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'], days: ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'],
       fmtDate: (D, d, M) => `${D} ${d} ${M}`, langBtn: 'ไทย',
-      navMine: 'ของฉัน', myTripTotal: 'ทริปนี้ฉันใช้ไป', myShare: 'ส่วนแบ่งค่าใช้จ่ายกลุ่ม', myOwn: 'ส่วนตัว',
+      navMine: 'ของฉัน', myTripTotal: 'ใช้จ่ายส่วนตัวทริปนี้', myShare: 'ส่วนแบ่งค่าใช้จ่ายกลุ่ม', myOwn: 'ส่วนตัว',
       myByCat: 'แยกตามหมวด', myEntries: 'รายการส่วนตัว', paidWith: 'จ่ายด้วย', backToFund: 'กองกลางทริป',
       mineNote: 'ส่วนแบ่งค่าใช้จ่ายกลุ่ม = ส่วนที่ต้องออกจริง ไม่ใช่เงินที่จ่ายเข้ากอง (ที่จ่ายเกินได้คืนตอนปิดทริป)',
       minePrivate: 'หน้านี้อยู่ในเครื่องนี้เท่านั้น ไม่ถูกส่งไปในสรุปหรือรูปที่แชร์ให้เพื่อน',
@@ -1060,6 +1065,9 @@
       walHint: 'What you set aside to spend on yourself — your own wallet, separate from the group fund, and only your own entries come off it',
       walTopupNote: (m) => `Plus ${m} topped up along the way — already counted`,
       walSet: 'Set what you brought for yourself', walClear: 'Clear',
+      walSetCash: 'Set the cash you brought', walSetCard: 'Set the card money you set aside',
+      walTitleCash: 'Cash you brought for yourself', walTitleCard: 'Card money set aside for yourself',
+      walPrepSrc: (s, m) => `${s} · ${m} set aside`,
       walPrep: (m) => `${m} set aside`,
       walLeft: (m) => `${m} left`, walOver: (m) => `${m} over`,
       walSaved: 'Saved', walCleared: 'Cleared',
@@ -1090,7 +1098,7 @@
       navSum: 'Summary', navList: 'Entries', navSet: 'Settings',
       addEntry: 'New entry', editEntry: 'Edit entry', typeExpense: 'Expense', typeDeposit: 'Chip In', amount: 'Amount', note: 'Description',
       notePhExp: 'e.g. Ramen lunch, fuel, Alpine Route tickets', notePhDep: 'e.g. Chip-in before departure, top-up #2',
-      srcLabel: 'Source', srcCash: 'Cash', srcCard: 'Card', srcRemaining: 'Remaining',
+      srcLabel: 'Source', srcInto: 'Top up into', srcCash: 'Cash', srcCard: 'Card', srcRemaining: 'Remaining',
       category: 'Category', paidBy: 'Paid by', paidByHint: 'If a friend paid out of pocket, pick their name — they cash out at trip end', splitAmong: 'Split among', depositBy: 'Who chipped in', date: 'Date',
       delete: 'Delete', cancel: 'Cancel', save: 'Save', undo: 'Undo', fund: 'Fund', everyone: 'All', shortTitle: (bal, short) => `Fund has only ${bal} — short by ${short}`, shortNone: 'Fund can cover it, but someone advances part', advBy: 'Who advances the shortfall', advAmt: 'Amount advanced', fundPart: 'Paid by fund', advHintOn: (n, v) => `${n} advances ${v}, cashes out at trip end`, advHintOff: 'If no one is picked, the fund pays it all (balance goes negative)', fromFundPlus: (f, n, v) => `Fund ${f} + ${n} advanced ${v}`, sumAdvancedPart: (n, v) => `(${n} advanced ${v})`, everyoneHint: (n) => `Saved as ${n} separate entries, one per person, same amount`, depositedAllToast: (v, n) => `Chipped in ${v} from everyone (${n} entries)`,
       getBack: 'Cash Out', even: '', net: 'net',
@@ -1115,7 +1123,7 @@
       firstRun: 'Start with the trip name, members and currency, then tap + to record',
       months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       fmtDate: (D, d, M) => `${D} ${d} ${M}`, langBtn: 'EN',
-      navMine: 'My Slice', myTripTotal: 'My trip total', myShare: 'My share of group spend', myOwn: 'Outside the pot',
+      navMine: 'My Slice', myTripTotal: 'My personal spending', myShare: 'My share of group spend', myOwn: 'Outside the pot',
       myByCat: 'By category', myEntries: 'Outside the pot', paidWith: 'Paid with', backToFund: 'Trip fund',
       mineNote: 'Your share of group spend is what the trip costs you — not what you chipped in (extra comes back at trip end)',
       minePrivate: 'This page stays on this device — never part of the summary or image you share',
@@ -1164,7 +1172,12 @@
     if (!Array.isArray(o.mine)) o.mine = [];
     o.mine = o.mine.filter(e => e && e.id && e.orig != null);
     o.mine.forEach(e => { if (!e.cur) e.cur = 'JPY'; if (!e.cat) e.cat = 'other'; if (e.src !== 'card') e.src = 'cash'; if (!e.date) e.date = '2000-01-01'; if (e.type !== 'deposit') e.type = 'expense'; });
-    if (!(o.myWallet && o.myWallet.orig > 0 && o.myWallet.cur)) o.myWallet = null;
+    if (o.myWallet && typeof o.myWallet.orig === 'number') o.myWallet = { cash: { orig: o.myWallet.orig, cur: o.myWallet.cur }, card: null };  // up to v9.3 there was a single pot — it was cash
+    if (o.myWallet) {
+      const pot = (p) => (p && p.orig > 0 && p.cur) ? { orig: p.orig, cur: p.cur } : null;
+      o.myWallet = { cash: pot(o.myWallet.cash), card: pot(o.myWallet.card) };
+      if (!o.myWallet.cash && !o.myWallet.card) o.myWallet = null;
+    } else o.myWallet = null;
     if (o.meId && !o.members.some(m => m.id === o.meId)) o.meId = null;
     if (!o.meId && o.members.length === 1) o.meId = o.members[0].id;
     delete o.rate;
@@ -1459,10 +1472,10 @@
 
   // ---------- my slice (personal spending, never part of the fund) ----------
   function calcMine() {
-    const r = { total: 0, in: 0, byCat: {}, bySrc: { cash: 0, card: 0 }, hasCard: false, n: 0 };
+    const r = { total: 0, in: 0, byCat: {}, bySrc: { cash: 0, card: 0 }, inSrc: { cash: 0, card: 0 }, hasCard: false, n: 0 };
     (S.mine || []).forEach(e => {
       const a = amt(e);
-      if (e.type === 'deposit') { r.in += a; return; }
+      if (e.type === 'deposit') { r.in += a; r.inSrc[e.src === 'card' ? 'card' : 'cash'] += a; return; }
       r.total += a; r.n++;
       r.byCat[e.cat] = (r.byCat[e.cat] || 0) + a;
       r.bySrc[e.src === 'card' ? 'card' : 'cash'] += a;
@@ -1474,22 +1487,17 @@
   const mineIds = new Set();
   function renderMine(r) {
     const m = calcMine();
-    const hasMe = !!(S.meId && member(S.meId));
-    const share = hasMe ? r.myShare : 0;
-    const total = share + m.total;
+    const total = m.total;                           // this page is personal money only — no group share in it
     $('myTotal').textContent = fmt(total);
     $('myTotalTHB').textContent = fmtTHB(total);
-    $('myShareV').textContent = hasMe ? money(share) : '—';
-    $('myOwnV').textContent = money(m.total);
     renderWallet(m);
-    $('mySrcRow').style.display = m.hasCard ? '' : 'none';
-    if (m.hasCard) { $('mySrcCash').textContent = fmt(m.bySrc.cash); $('mySrcCard').textContent = fmt(m.bySrc.card); }
+    $('mySrcRow').style.display = m.n ? '' : 'none';
+    $('mySrcCash').textContent = fmt(m.bySrc.cash);
+    $('mySrcCard').textContent = fmt(m.bySrc.card);
     $('fundLinkBal').textContent = money(r.balance);
     $('fundLink').onclick = () => showView('sum');
-    $('mineNote').textContent = hasMe ? t('mineNote') : t('meNotSet');
     $('minePrivate').textContent = t('minePrivate');
-    $('mePickCard').style.display = hasMe ? 'none' : '';
-    if (!hasMe) renderMePick($('mePick'));
+    $('mePickCard').style.display = 'none';
     const cats = CATS.map(c => ({ ...c, a: m.byCat[c.id] || 0 })).filter(c => c.a > 0).sort((a, b) => b.a - a.a);
     const max = cats.length ? cats[0].a : 1;
     $('myCatCount').textContent = t('nExpenses', m.n);
@@ -1498,31 +1506,34 @@
     $('myCats').innerHTML = cats.map(c => `<div class="cat"><span class="n">${catName(c)} <span class="hint">${Math.round(c.a / m.total * 100)}%</span></span><span class="a num">${money(c.a)}</span><div class="bar"><i style="width:${c.a / max * 100}%"></i></div></div>`).join('');
     renderMineList();
   }
-  // money set aside, plus anything topped up along the way
-  const walPrepared = (m) => (S.myWallet ? toBase(S.myWallet.orig, S.myWallet.cur) : 0) + m.in;
-  function renderWallet(m) {
-    const prep = walPrepared(m);
-    const bar = $('myWalBar'), row = $('myWalBtn');
+  // one pot per source — money set aside for it, plus anything topped up into it along the way
+  const walPot = (k) => (S.myWallet && S.myWallet[k]) ? toBase(S.myWallet[k].orig, S.myWallet[k].cur) : 0;
+  const walPrepared = (m, k) => walPot(k) + m.inSrc[k];
+  function renderWalletRow(m, k) {
+    const C = k === 'card' ? 'Card' : 'Cash';
+    const prep = walPrepared(m, k), spent = m.bySrc[k];
+    const bar = $('myWalBar' + C), row = $('myWalBtn' + C);
     row.classList.toggle('unset', !prep);
     if (!prep) {
       bar.classList.add('off');
       row.classList.remove('over');
-      $('myWalLbl').textContent = t('walSet');
-      $('myWalVal').textContent = '+';
+      $('myWalLbl' + C).textContent = t(k === 'card' ? 'walSetCard' : 'walSetCash');
+      $('myWalVal' + C).textContent = '+';
       return;
     }
-    const left = prep - m.total;                     // personal entries only — the group fund is not touched
-    const pct = Math.max(0, Math.min(100, m.total / prep * 100));
+    const left = prep - spent;                       // personal entries only — the group fund is not touched
+    const pct = Math.max(0, Math.min(100, spent / prep * 100));
     bar.classList.remove('off');
     bar.classList.toggle('over', left < 0);
     row.classList.toggle('over', left < 0);
-    $('myWalFill').style.width = (left < 0 ? 100 : pct) + '%';
-    $('myWalLbl').textContent = t('walPrep', money(prep));
-    $('myWalVal').textContent = left < 0 ? t('walOver', money(-left)) : t('walLeft', money(left));
+    $('myWalFill' + C).style.width = (left < 0 ? 100 : pct) + '%';
+    $('myWalLbl' + C).textContent = t('walPrepSrc', t(k === 'card' ? 'srcCard' : 'srcCash'), fmt(prep));
+    $('myWalVal' + C).textContent = left < 0 ? t('walOver', fmt(-left)) : t('walLeft', fmt(left));
   }
+  function renderWallet(m) { renderWalletRow(m, 'cash'); renderWalletRow(m, 'card'); }
   function mineRow(e) {
     if (e.type === 'deposit') {
-      return `<button class="entry deposit src-cash" data-id="${e.id}">${mineSel ? `<span class="ic ck ${mineIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(DEPOSIT_ICON)}</span>`}<span><span class="t">${esc(e.note || t('topupDefault'))}</span><span class="m">${t('mineTopup')}</span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+      return `<button class="entry deposit ${e.src === 'card' ? 'src-card' : 'src-cash'}" data-id="${e.id}">${mineSel ? `<span class="ic ck ${mineIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(DEPOSIT_ICON)}</span>`}<span><span class="t">${esc(e.note || t('topupDefault'))}</span><span class="m">${t('mineTopup')} <span class="pill src-${e.src === 'card' ? 'card' : 'cash'}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span></span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
     }
     const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
     const src = e.src === 'card' ? 'src-card' : 'src-cash';
@@ -1801,35 +1812,44 @@
   function closeSheet() { unlockScroll(); $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); $('walSheet').classList.remove('on'); }
 
   // ---------- money set aside for myself ----------
-  let walCur = 'THB';
+  let walCur = 'THB', walKind = 'cash';
   function renderWalSheet() {
     const curs = [...new Set([S.base, 'THB', walCur])];
     $('walCur').innerHTML = curs.map(c => `<button type="button" data-cur="${c}" class="${walCur === c ? 'on' : ''}">${c}</button>`).join('');
     $('walCur').querySelectorAll('button').forEach(b => b.onclick = () => { walCur = b.dataset.cur; renderWalSheet(); });
     const v = amtExprVal($('walAmount').value);
     $('walConv').textContent = (v > 0) ? [walCur !== S.base ? money(toBase(v, walCur)) : '', approx(toBase(v, walCur))].filter(Boolean).join(' · ') : '';
-    const inAmt = calcMine().in;
+    const inAmt = calcMine().inSrc[walKind];
     $('walTopupNote').textContent = inAmt > 0 ? t('walTopupNote', money(inAmt)) : '';
+    $('walTitleH').textContent = t(walKind === 'card' ? 'walTitleCard' : 'walTitleCash');
   }
-  function openWalSheet() {
+  function openWalSheet(kind) {
     if (window.__ppMember) { toast(t('shViewerToast')); return; }
-    walCur = S.myWallet ? S.myWallet.cur : S.base;
-    $('walAmount').value = S.myWallet ? fmtAmtExpr(String(S.myWallet.orig)) : '';
-    $('walClear').style.display = S.myWallet ? '' : 'none';
+    walKind = kind === 'card' ? 'card' : 'cash';
+    const pot = S.myWallet ? S.myWallet[walKind] : null;
+    walCur = pot ? pot.cur : S.base;
+    $('walAmount').value = pot ? fmtAmtExpr(String(pot.orig)) : '';
+    $('walClear').style.display = pot ? '' : 'none';
     renderWalSheet();
     showSheet('walSheet');
-    if (!S.myWallet) setTimeout(() => $('walAmount').focus(), 300);
+    if (!pot) setTimeout(() => $('walAmount').focus(), 300);
   }
   $('walAmount').addEventListener('input', renderWalSheet);
   $('walCancel').onclick = closeSheet;
-  $('walClear').onclick = () => { S.myWallet = null; save(); closeSheet(); renderAll(); toast(t('walCleared')); };
+  function setWalPot(p) {
+    const w = S.myWallet ? { cash: S.myWallet.cash || null, card: S.myWallet.card || null } : { cash: null, card: null };
+    w[walKind] = p;
+    S.myWallet = (w.cash || w.card) ? w : null;
+  }
+  $('walClear').onclick = () => { setWalPot(null); save(); closeSheet(); renderAll(); toast(t('walCleared')); };
   $('walSave').onclick = () => {
     const v = amtExprVal($('walAmount').value);
     if (!(v > 0)) { toast(t('needAmount')); $('walAmount').focus(); return; }
-    S.myWallet = { orig: v, cur: walCur };
+    setWalPot({ orig: v, cur: walCur });
     save(); closeSheet(); renderAll(); toast(t('walSaved'));
   };
-  $('myWalBtn').onclick = openWalSheet;
+  $('myWalBtnCash').onclick = () => openWalSheet('cash');
+  $('myWalBtnCard').onclick = () => openWalSheet('card');
   $('fab').onclick = () => openSheet(null, curView === 'mine' ? 'mine' : 'fund');
   $('scrim').onclick = closeSheet; $('fCancel').onclick = closeSheet;
 
@@ -1862,7 +1882,8 @@
     $('fDep').innerHTML = (F.id ? '' : `<button data-d="all" class="${F.by === 'all' ? 'on' : ''}">${t('everyone')}</button>`) + S.members.map(m => `<button data-d="${m.id}" class="${F.by === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
     $('depHint').textContent = F.by === 'all' ? t('everyoneHint', S.members.length) : '';
     $('fDep').querySelectorAll('button').forEach(b => b.onclick = () => { F.by = b.dataset.d; renderForm(); });
-    $('srcField').style.display = (mineMode && !isExp) ? 'none' : ((mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none');
+    $('srcField').style.display = (mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none';
+    $('srcLbl').textContent = (mineMode && !isExp) ? t('srcInto') : t('srcLabel');
     $('fSrc').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.s === F.src); b.onclick = () => { F.src = b.dataset.s; renderForm(); }; });
     updateConv();
   }
@@ -1951,7 +1972,7 @@
       const me = {
         id: F.id || uid(), type: isIn ? 'deposit' : 'expense', cur: F.cur, orig, amount: Math.round(amount * 100) / 100,
         note: $('fNote').value.trim(), date: $('fDate').value || today(),
-        cat: F.cat, src: isIn ? 'cash' : (F.src === 'card' ? 'card' : 'cash'), own: true, ts: Date.now()
+        cat: F.cat, src: F.src === 'card' ? 'card' : 'cash', own: true, ts: Date.now()
       };
       S.lastSrcMine = me.src;
       S.mine = S.mine || [];
