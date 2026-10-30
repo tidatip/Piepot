@@ -490,6 +490,12 @@
   .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
   .seg button.on.dep { color: var(--in); }
   .seg button.on.exp { color: var(--out); }
+  #typeSeg { grid-template-columns: 1fr 1fr 1fr; }
+  #typeSeg.two { grid-template-columns: 1fr 1fr; }
+  #typeSeg button { padding: 9px 4px; font-size: 13.5px; }
+  .seg button.on.xfer { color: var(--accent); }
+  .entry.xfer .amt { color: var(--ink-2); }
+  .entry.xfer .ic { background: var(--accent-soft); color: var(--accent); }
   .seg.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .seg.four button { padding: 9px 4px; font-size: 13px; }
   .rate-row { display: grid; grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: center; margin-top: 10px; font-weight: 500; }
@@ -730,7 +736,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.8</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.12</p>
   </main>
 </div>
 
@@ -795,6 +801,7 @@
   <div class="seg" id="typeSeg">
     <button data-t="expense" class="on exp" data-i="typeExpense"></button>
     <button data-t="deposit" class="dep" data-i="typeDeposit"></button>
+    <button data-t="transfer" class="xfer" data-i="typeXfer"></button>
   </div>
 
   <div class="field">
@@ -842,6 +849,14 @@
     <label data-i="depositBy"></label>
     <div class="choices" id="fDep"></div>
     <div class="hint" id="depHint"></div>
+  </div>
+
+  <div class="field" id="xferField" style="display:none">
+    <label data-i="xferFrom"></label>
+    <div class="choices" id="fXFrom"></div>
+    <label data-i="xferTo" style="display:block;margin-top:12px"></label>
+    <div class="choices" id="fXTo"></div>
+    <div class="hint" data-i="xferHint"></div>
   </div>
 
   <div class="field" id="srcField">
@@ -976,6 +991,7 @@
     { id: 'other', th: 'อื่น ๆ', en: 'Other', icon: 'M12 5v.01M12 12v.01M12 19v.01' }
   ];
   const DEPOSIT_ICON = 'M12 3v18M6 9l6-6 6 6';
+  const XFER_ICON = 'M4 9h13l-4-4M20 15H7l4 4';
   const GROUP_ICON = 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
   const CUR = {
     JPY: { sym: '¥', per: 100 },
@@ -1049,7 +1065,13 @@
       metaIn: 'รับ', metaPaid: 'สำรองจ่าย', metaShare: 'ส่วนที่ต้องออก',
       settleLine: (rf, col, bal) => `ปิดทริป: กองคืนรวม ${rf} · เก็บเพิ่มรวม ${col} · เหลือในกอง ${bal}`,
       noEntriesYet: 'ยังไม่มีรายการ กดปุ่ม + เพื่อเริ่มบันทึก', nExpenses: (n) => `${n} รายการ`, noExpenses: 'ยังไม่มีค่าใช้จ่าย',
-      paysIn: (n) => `${n} จ่ายเข้ากอง`, refundTo: (n) => `กองคืนให้ ${n}`, allEven: 'ทุกคนหายกันแล้ว ไม่ต้องโอนเงิน',
+      paysIn: (n) => `${n} ต้องจ่ายเพิ่ม`, refundTo: (n) => `${n} ได้คืน`, allEven: 'ทุกคนหายกันแล้ว ไม่ต้องโอนเงิน',
+      typeXfer: 'จ่ายคืน', xferFrom: 'ใครจ่าย', xferTo: 'จ่ายให้ใคร',
+      xferHint: 'เงินที่จ่ายกันเองนอกกองกลาง เช่น คืนเงินให้คนที่สำรองจ่ายไปก่อน · ไม่กระทบยอดกองกลางและยอดใช้จ่ายรวมของทริป',
+      xferNeed: 'เลือกคนจ่ายกับคนรับให้ครบ และต้องไม่ใช่คนเดียวกัน',
+      xferToast: (a, b, v) => `${a} จ่ายให้ ${b} ${v} แล้ว`,
+      metaXferOut: 'จ่ายให้เพื่อน', metaXferIn: 'รับจากเพื่อน', sumXfer: '(จ่ายคืน)',
+      notePhXfer: 'เช่น คืนค่าที่พักที่สำรองจ่ายไว้',
       all: 'ทั้งหมด', emptyList: 'ยังไม่มีรายการ', emptyListHint: 'กดปุ่ม + ด้านล่างเพื่อบันทึกรายการแรก', daySpent: 'ใช้ไป',
       depositDefault: 'รับเงิน', putIn: (n) => `รับจาก ${n}`, fromFund: 'จากกอง', advanced: (n) => `${n} สำรองจ่าย`,
       splitN: (n) => `หาร ${n}`, alone: (n) => `${n} คนเดียว`, reimburse: 'รอคืน',
@@ -1134,7 +1156,13 @@
       metaIn: 'Chipped in', metaPaid: 'advanced', metaShare: 'share',
       settleLine: (rf, col, bal) => `Trip end: cash out ${rf} · collect ${col} · left in fund ${bal}`,
       noEntriesYet: 'No entries yet — tap + to start', nExpenses: (n) => `${n} ${n === 1 ? 'entry' : 'entries'}`, noExpenses: 'No expenses yet',
-      paysIn: (n) => `${n} pays the fund`, refundTo: (n) => `Cash out to ${n}`, allEven: 'Everyone is even — nothing to transfer',
+      paysIn: (n) => `${n} pays in`, refundTo: (n) => `${n} gets back`, allEven: 'Everyone is even — nothing to transfer',
+      typeXfer: 'Settle up', xferFrom: 'Who paid', xferTo: 'Paid to',
+      xferHint: 'Money handed straight to each other, outside the pot — paying someone back for what they advanced, for example. It changes neither the fund balance nor the trip total',
+      xferNeed: 'Pick who paid and who was paid — they cannot be the same person',
+      xferToast: (a, b, v) => `${a} paid ${b} ${v}`,
+      metaXferOut: 'paid a friend', metaXferIn: 'got from a friend', sumXfer: '(settled)',
+      notePhXfer: 'e.g. paying back the hotel she covered',
       all: 'All', emptyList: 'No entries yet', emptyListHint: 'Tap + below to record the first one', daySpent: 'Spent',
       depositDefault: 'Chip In', putIn: (n) => `${n} chipped in`, fromFund: 'From fund', advanced: (n) => `${n} advanced`,
       splitN: (n) => `split ${n}`, alone: (n) => `${n} only`, reimburse: 'Repay',
@@ -1262,9 +1290,14 @@
   // ---------- calculations ----------
   function calc() {
     const r = { fundIn: 0, fundOut: 0, spent: 0, byCat: {}, per: {} };
-    S.members.forEach(m => r.per[m.id] = { in: 0, paid: 0, share: 0, net: 0 });
+    S.members.forEach(m => r.per[m.id] = { in: 0, paid: 0, share: 0, xfer: 0, net: 0 });
     S.entries.forEach(e => {
       const a = amt(e);
+      if (e.type === 'transfer') {        // handed straight to each other — the pot and the trip total stay untouched
+        if (r.per[e.from]) r.per[e.from].xfer += a;
+        if (r.per[e.to]) r.per[e.to].xfer -= a;
+        return;
+      }
       if (e.type === 'deposit') {
         r.fundIn += a;
         if (r.per[e.by]) r.per[e.by].in += a;
@@ -1286,7 +1319,7 @@
     });
     r.hasCard = S.entries.some(e => e.src === 'card');
     r.balance = r.fundIn - r.fundOut;
-    S.members.forEach(m => { const p = r.per[m.id]; p.net = p.in + p.paid - p.share; });
+    S.members.forEach(m => { const p = r.per[m.id]; p.net = p.in + p.paid + p.xfer - p.share; });
     r.myShare = (S.meId && r.per[S.meId]) ? r.per[S.meId].share : 0;
     return r;
   }
@@ -1353,6 +1386,7 @@
           <div class="slice-hd"><span class="name">${esc(m.name)}</span><span class="net num ${cls}"><span class="t">${t('net')}</span>${fmtSigned(p.net)}</span></div>
           <div class="meta num">${t('metaIn')} <span class="nw">${money(p.in)}</span></div>
           <div class="meta num">${t('metaPaid')} <span class="nw">${money(p.paid)}</span></div>
+          ${Math.abs(p.xfer) > 0.005 ? `<div class="meta num">${t(p.xfer > 0 ? 'metaXferOut' : 'metaXferIn')} <span class="nw">${money(Math.abs(p.xfer))}</span></div>` : ''}
           <div class="meta num">${t('metaShare')} <span class="nw">${money(p.share)}</span> <span class="nw">${approx(p.share)}</span></div>
         </div></div>`;
     }).join('');
@@ -1416,12 +1450,12 @@
     $('selDelete').textContent = t('deleteSel', selIds.size);
     $('selDelete').disabled = !selIds.size;
     const counts = {};
-    S.entries.forEach(e => { const k = e.type === 'deposit' ? 'deposit' : e.cat; counts[k] = (counts[k] || 0) + 1; });
-    const chips = [{ id: 'all', label: t('all') }, { id: 'deposit', label: t('typeDeposit') }, ...CATS.map(c => ({ id: c.id, label: catName(c) }))].filter(c => c.id === 'all' || counts[c.id]);
+    S.entries.forEach(e => { const k = e.type === 'deposit' ? 'deposit' : e.type === 'transfer' ? 'transfer' : e.cat; counts[k] = (counts[k] || 0) + 1; });
+    const chips = [{ id: 'all', label: t('all') }, { id: 'deposit', label: t('typeDeposit') }, { id: 'transfer', label: t('typeXfer') }, ...CATS.map(c => ({ id: c.id, label: catName(c) }))].filter(c => c.id === 'all' || counts[c.id]);
     $('filters').innerHTML = chips.map(c => `<button class="chip ${filter === c.id ? 'on' : ''}" data-f="${c.id}">${c.label}${c.id !== 'all' ? ` ${counts[c.id]}` : ''}</button>`).join('');
     $('filters').querySelectorAll('button').forEach(b => b.onclick = () => { filter = b.dataset.f; renderEntries(); });
 
-    let list = S.entries.filter(e => filter === 'all' || (filter === 'deposit' ? e.type === 'deposit' : e.type === 'expense' && e.cat === filter));
+    let list = S.entries.filter(e => filter === 'all' || (filter === 'deposit' ? e.type === 'deposit' : filter === 'transfer' ? e.type === 'transfer' : e.type === 'expense' && e.cat === filter));
     list = list.slice().sort((a, b) => b.date.localeCompare(a.date) || (b.ts || 0) - (a.ts || 0));
     if (!list.length) { $('entries').innerHTML = `<div class="empty"><b>${t('emptyList')}</b>${t('emptyListHint')}</div>`; return; }
     const days = {};
@@ -1489,6 +1523,9 @@
   const subAmt = (e) => [e.cur !== S.base ? moneyC(e.orig, e.cur) : '', e.cur === 'THB' ? '' : approx(amt(e))].filter(Boolean).join(' · ');
   function entryRow(e) {
     const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
+    if (e.type === 'transfer') {
+      return `<button class="entry xfer" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(XFER_ICON)}</span>`}<span><span class="t">${esc(mname(e.from))} \u2192 ${esc(mname(e.to))}</span><span class="m">${t('typeXfer')}${e.note ? ' · ' + esc(e.note) : ''}</span></span><span class="amt num">${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+    }
     if (e.type === 'deposit') {
       return `<button class="entry deposit ${e.src === 'card' ? 'src-card' : e.src === 'cash' ? 'src-cash' : ''}" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(DEPOSIT_ICON)}</span>`}<span><span class="t">${esc(e.note || t('depositDefault'))}</span><span class="m">${t('putIn', esc(mname(e.by)))}${e.src ? ` <span class="pill src-${e.src}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span>` : ''}</span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
     }
@@ -1751,6 +1788,8 @@
     F.advOrig = e && e.adv ? e.adv.orig : null;
     F.advManual = !!(e && e.adv);
     F.src = e ? (e.src === 'card' ? 'card' : 'cash') : (S.lastSrc === 'card' ? 'card' : 'cash');
+    F.xFrom = e && e.from ? e.from : (S.members[0] ? S.members[0].id : null);
+    F.xTo = e && e.to ? e.to : (S.members.find(m => m.id !== F.xFrom) || {}).id || null;
     F.grpIds = [];
     if (e && e.type === 'deposit') {
       const batch = e.grp
@@ -1889,6 +1928,9 @@
   function renderForm() {
     const mineMode = F.mode === 'mine';
     const isExp = F.type === 'expense';
+    const isXfer = F.type === 'transfer';
+    $('typeSeg').classList.toggle('two', mineMode);
+    $('typeSeg').querySelectorAll('button')[2].style.display = mineMode ? 'none' : '';
     $('typeSeg').style.display = '';
     $('typeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === F.type));
     const segB = $('typeSeg').querySelectorAll('button');
@@ -1899,8 +1941,8 @@
     $('paidField').style.display = (isExp && !mineMode) ? '' : 'none';
     const solo = S.members.length === 1;
     $('splitField').style.display = (isExp && !mineMode && !solo) ? '' : 'none';
-    $('depField').style.display = (isExp || mineMode || solo) ? 'none' : '';
-    $('fNote').placeholder = mineMode ? (isExp ? t('notePhMine') : t('notePhTopup')) : isExp ? t('notePhExp') : t('notePhDep');
+    $('depField').style.display = (isExp || isXfer || mineMode || solo) ? 'none' : '';
+    $('fNote').placeholder = mineMode ? (isExp ? t('notePhMine') : t('notePhTopup')) : isXfer ? t('notePhXfer') : isExp ? t('notePhExp') : t('notePhDep');
     const curs = [...new Set([S.base, 'THB', F.cur])];
     $('fCur').innerHTML = curs.map(c => `<button data-cur="${c}" class="${F.cur === c ? 'on' : ''}">${c}</button>`).join('');
     $('fCur').querySelectorAll('button').forEach(b => b.onclick = () => { F.cur = b.dataset.cur; renderForm(); });
@@ -1915,7 +1957,16 @@
     $('fDep').innerHTML = (F.id ? '' : `<button data-d="all" class="${F.by === 'all' ? 'on' : ''}">${t('everyone')}</button>`) + S.members.map(m => `<button data-d="${m.id}" class="${F.by === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
     $('depHint').textContent = F.by === 'all' ? t('everyoneHint', S.members.length) : '';
     $('fDep').querySelectorAll('button').forEach(b => b.onclick = () => { F.by = b.dataset.d; renderForm(); });
-    $('srcField').style.display = (mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none';
+    $('xferField').style.display = isXfer ? '' : 'none';
+    if (isXfer) {
+      const pick = (box, cur, other, set) => {
+        $(box).innerHTML = S.members.map(m => `<button data-x="${m.id}" class="${cur === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
+        $(box).querySelectorAll('button').forEach(b => b.onclick = () => { set(b.dataset.x); renderForm(); });
+      };
+      pick('fXFrom', F.xFrom, F.xTo, (v) => { if (F.xTo === v) F.xTo = F.xFrom; F.xFrom = v; });
+      pick('fXTo', F.xTo, F.xFrom, (v) => { if (F.xFrom === v) F.xFrom = F.xTo; F.xTo = v; });
+    }
+    $('srcField').style.display = isXfer ? 'none' : ((mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none');
     $('srcLbl').textContent = (mineMode && !isExp) ? t('srcInto') : t('srcLabel');
     $('fSrc').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.s === F.src); b.onclick = () => { F.src = b.dataset.s; renderForm(); }; });
     updateConv();
@@ -2015,6 +2066,18 @@
       toast(j >= 0 ? t('edited') : isIn ? t('topupToast', money(amount)) : t('savedToast', money(amount)));
       return;
     }
+    if (F.type === 'transfer') {
+      if (!F.xFrom || !F.xTo || F.xFrom === F.xTo) { toast(t('xferNeed')); return; }
+      const x = {
+        id: F.id || uid(), type: 'transfer', cur: F.cur, orig, amount: Math.round(amount * 100) / 100,
+        note: $('fNote').value.trim(), date: $('fDate').value || today(), from: F.xFrom, to: F.xTo, ts: Date.now()
+      };
+      const k = S.entries.findIndex(y => y.id === x.id);
+      if (k >= 0) { x.ts = S.entries[k].ts || x.ts; S.entries[k] = x; } else S.entries.push(x);
+      save(); closeSheet(); renderAll();
+      toast(k >= 0 ? t('edited') : t('xferToast', mname(x.from), mname(x.to), money(amount)));
+      return;
+    }
     if (F.type === 'expense' && !F.split.length) { toast(t('needSplit')); return; }
     const e = {
       id: F.id || uid(), type: F.type, cur: F.cur, orig, amount: Math.round(amount * 100) / 100, note: $('fNote').value.trim(), date: $('fDate').value || today(), ts: Date.now()
@@ -2087,6 +2150,7 @@
     }
   }
   function entryLine(e) {
+    if (e.type === 'transfer') return `${money(amt(e))}${e.cur !== S.base ? ` (${moneyC(e.orig, e.cur)})` : ''} ${mname(e.from)} \u2192 ${mname(e.to)} ${t('sumXfer')}${e.note ? ' · ' + e.note : ''}`;
     return `${e.type === 'deposit' ? '+' : '−'}${money(amt(e))}${e.cur !== S.base ? ` (${moneyC(e.orig, e.cur)})` : ''} ${e.note || (e.type === 'deposit' ? t('depositDefault') : catName(CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1]))}${e.type === 'deposit' && member(e.by) ? ` — ${mname(e.by)}` : ''}${e.type === 'expense' && e.paidBy !== 'fund' ? ' ' + t('sumAdvanced', mname(e.paidBy)) : ''}${e.type === 'expense' && advBase(e) > 0 ? ' ' + t('sumAdvancedPart', mname(e.adv.by), money(advBase(e))) : ''}`;
   }
   // what each entry does to the fund — mirrors calc() exactly, so the days reconcile to the balance
@@ -2154,7 +2218,7 @@
       d.days.forEach(day => {
         h += `<div class="sp-day">${esc(day.label)}${day.spent > 0.005 ? ` <small>· ${esc(withState(shareState || S, () => t('sumDaySpent', money(day.spent))))}</small>` : ''}</div>`;
         h += `<div class="sp-bf"><span>${esc(t('sumBf'))}</span><span>${esc(mny(day.bf))}</span></div>`;
-        h += day.lines.map(l => `<div class="sp-line${l.charAt(0) === '+' ? ' in' : ' ex'}">${esc(l)}</div>`).join('');
+        h += day.lines.map(l => `<div class="sp-line${l.charAt(0) === '+' ? ' in' : l.charAt(0) === '−' ? ' ex' : ''}">${esc(l)}</div>`).join('');
         h += `<div class="sp-cf"><span>${esc(t('sumCf'))}</span><span>${esc(mny(day.cf))}</span></div>`;
       });
     }
@@ -2184,9 +2248,10 @@
       const base = S.base, trip = S.trip;
       const keep = shareDay ? S.entries.filter(e => e.date === shareDay) : S.entries;
       const rows = keep.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.ts || 0) - (b.ts || 0)).map(e => {
-        const dep = e.type === 'deposit';
+        const dep = e.type === 'deposit', xf = e.type === 'transfer';
         let det;
-        if (dep) { det = (e.note || t('depositDefault')) + (member(e.by) ? ' — ' + mname(e.by) : ''); }
+        if (xf) { det = `${mname(e.from)} \u2192 ${mname(e.to)}` + (e.note ? ': ' + e.note : '') + ' ' + t('sumXfer'); }
+        else if (dep) { det = (e.note || t('depositDefault')) + (member(e.by) ? ' — ' + mname(e.by) : ''); }
         else {
           const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
           det = catName(cat) + (e.note ? ': ' + e.note : '');
@@ -2194,7 +2259,7 @@
           else if (advBase(e) > 0) det += ' ' + t('sumAdvancedPart', mname(e.adv.by), money(advBase(e)));
         }
         if (e.cur !== base) det += ' · ' + moneyC(e.orig, e.cur);
-        return { date: e.date, det: truncDet(det), amt: fmtA(amt(e)), dep, noFund: !dep && e.paidBy !== 'fund' };
+        return { date: e.date, det: truncDet(det), amt: fmtA(amt(e)), dep, xf, noFund: xf || (!dep && e.paidBy !== 'fund') };
       });
       const r2 = calc();
       const peopleRows = S.members.map(m => {
@@ -2227,7 +2292,7 @@
     const amtHead = `${t('amount')} (${data.base})`;
     let detW = tw(t('note'), thF), amtW = tw(amtHead, thF);
     data.rows.forEach(r => {
-      r.amtText = r.dep ? r.amt : `(${r.amt})`;
+      r.amtText = (r.dep || r.xf) ? r.amt : `(${r.amt})`;
       r.aw = tw(r.amtText, amtF);
       detW = Math.max(detW, tw(r.det, detF));
       amtW = Math.max(amtW, r.aw);
@@ -2305,7 +2370,7 @@
             const ty = y + 10;
             x.textAlign = 'left';
             x.font = detF; x.fillStyle = r.noFund ? C.muted : C.ink; x.fillText(r.det, P, ty);
-            x.font = amtF; x.fillStyle = r.dep ? C.inC : C.outC;
+            x.font = amtF; x.fillStyle = r.dep ? C.inC : r.xf ? C.muted : C.outC;
             if (r.noFund) x.globalAlpha = .6;
             x.fillText(r.amtText, X_AMT - r.aw, ty);
             x.globalAlpha = 1;
@@ -2456,7 +2521,14 @@
     scanOk: 'อ่านใบเสร็จแล้ว ตรวจก่อนบันทึก', scanLow: 'อ่านได้ไม่ชัด ตรวจตัวเลขให้ดี',
     scanFail: 'อ่านไม่สำเร็จ ลองใหม่หรือกรอกเอง',
     scanPin: 'ใส่ PIN สำหรับสแกนใบเสร็จ', scanBadPin: 'PIN ไม่ถูกต้อง',
-    scanLimit: 'สแกนครบโควตาของวันนี้แล้ว'
+    scanLimit: 'สแกนครบโควตาของวันนี้แล้ว',
+    slipPill: 'สลิป', slipNew: 'สลิปใหม่ · จะบันทึกเมื่อกดบันทึกรายการ', slipSaved: 'แตะเพื่อดูสลิป',
+    slipRemove: 'เอาออก', slipDropped: 'เอาสลิปออกแล้ว', slipDelete: 'ลบสลิป',
+    slipGone: 'สลิปนี้อยู่ในเครื่องที่ถ่ายเท่านั้น', slipKept: 'เก็บสลิปไว้แล้ว',
+    slipOrig: 'ต้นฉบับ', slipEn: 'อังกฤษ', slipTotal: 'รวมทั้งสิ้น',
+    slipSub: 'ยอดก่อนภาษี', slipTax: 'ภาษี/ค่าบริการ',
+    slipMT: 'แปลด้วย AI ตอนสแกน อาจคลาดเคลื่อน · ยึดตามภาพสลิปเป็นหลัก',
+    slipLocal: 'ภาพสลิปเก็บในเครื่องนี้เท่านั้น ไม่ถูกส่งไปกับลิงก์ที่แชร์'
   });
   Object.assign(I18N.en, {
     shTitle: 'Share with your trip',
@@ -2480,7 +2552,14 @@
     scanOk: 'Receipt read — check before saving', scanLow: 'Low confidence — double-check the amount',
     scanFail: "Couldn't read it — try again or type it in",
     scanPin: 'Enter your scan PIN', scanBadPin: 'Wrong PIN',
-    scanLimit: "Daily scan limit reached"
+    scanLimit: "Daily scan limit reached",
+    slipPill: 'Slip', slipNew: 'New slip · saved when you save the entry', slipSaved: 'Tap to see the slip',
+    slipRemove: 'Remove', slipDropped: 'Slip removed', slipDelete: 'Delete slip',
+    slipGone: 'That slip only lives on the phone that took it', slipKept: 'Slip kept',
+    slipOrig: 'Original', slipEn: 'English', slipTotal: 'Total',
+    slipSub: 'Subtotal', slipTax: 'Tax / service',
+    slipMT: 'Translated by AI at scan time — check against the photo',
+    slipLocal: 'Slip photos stay on this device — never sent with the link you share'
   });
 
   // ---------- styles ----------
@@ -2494,6 +2573,28 @@
       '.sh-code{font-family:ui-monospace,Menlo,monospace;font-size:20px;font-weight:600;letter-spacing:1px;color:var(--ink);text-align:center;padding:10px;border:1px dashed var(--line);border-radius:12px;background:var(--bg);margin:8px 0}',
       '#scanBtn{width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px}',
       '#scanBtn svg{width:17px;height:17px}',
+      '#slipView{position:fixed;inset:0;z-index:70;background:#14100D;display:none;flex-direction:column}',
+      '#slipView.on{display:flex}',
+      '.sv-top{display:flex;align-items:center;gap:8px;padding:10px 12px calc(10px);padding-top:calc(10px + env(safe-area-inset-top))}',
+      '.sv-top button{border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer}',
+      '.sv-top .sp{flex:1}',
+      '.sv-body{flex:1;overflow:auto;padding:0 12px calc(24px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}',
+      '#svImg{display:block;width:auto;max-width:100%;max-height:62vh;margin:0 auto;border-radius:14px;background:#000}',
+      '.sv-txt{margin:14px auto 0;max-width:520px;background:#FBF6EE;color:#2B211A;border-radius:14px;padding:15px 17px;font-size:13.5px;line-height:1.55}',
+      '.sv-txt h4{margin:0;font-size:15.5px;font-weight:600}',
+      '.sv-txt .d{opacity:.6;font-size:12px;margin:2px 0 11px}',
+      '.sv-txt .li{display:flex;justify-content:space-between;gap:14px;padding:3px 0}',
+      '.sv-txt .li b{font-weight:400;white-space:nowrap}',
+      '.sv-txt .tot{display:flex;justify-content:space-between;gap:14px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(43,33,26,.16)}',
+      '.sv-txt .tot.big{font-weight:600;font-size:15px}',
+      '.sv-txt .mt{margin-top:12px;font-size:11.5px;opacity:.55;line-height:1.5}',
+      '.entry.has-slip .ic{position:relative;cursor:pointer}',
+      '.entry.has-slip .ic::after{content:"";position:absolute;right:-4px;bottom:-4px;width:17px;height:17px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface);background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27white%27%20stroke-width%3D%272.6%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%273%27%20y%3D%277%27%20width%3D%2718%27%20height%3D%2713%27%20rx%3D%273%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2713.5%27%20r%3D%273.4%27%2F%3E%3Cpath%20d%3D%27M8.5%207L10%204.5h4L15.5%207%27%2F%3E%3C%2Fsvg%3E");background-size:10px;background-position:50%;background-repeat:no-repeat}',
+      '#slipRow{display:flex;align-items:center;gap:8px;margin-top:10px}',
+      '#slipOpen{flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:7px 9px;font:inherit;font-size:13px;text-align:left;color:var(--ink);cursor:pointer}',
+      '#slipOpen img{width:38px;height:38px;flex:0 0 38px;object-fit:cover;border-radius:8px;background:var(--line)}',
+      '#slipOpen span{min-width:0;overflow:hidden;text-overflow:ellipsis}',
+      '#slipDel{flex:0 0 auto;border:0;background:none;color:var(--muted);font:inherit;font-size:13px;padding:8px 4px;cursor:pointer}',
       'body.pp-member #fab{display:none!important}',
       'body.pp-member #v-set .card:not(.pp-keep){display:none}',
       'body.pp-member #v-set .section-h{display:none}',
@@ -2735,17 +2836,218 @@
         c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
         URL.revokeObjectURL(url);
-        res(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
+        const b64 = c.toDataURL('image/jpeg', 0.8).split(',')[1];
+        // a second, lighter copy is what gets kept on the phone
+        c.toBlob((blob) => res({ b64, blob }), 'image/jpeg', 0.7);
       };
       img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); };
       img.src = url;
     });
   }
+
+  // ---------- slip photos: IndexedDB on this device, never synced and never shared ----------
+  const SLIP_DB = 'piepot-slips', SLIP_ST = 'slips';
+  const SLIPS = new Set();
+  let slipDbP = null;
+  function slipDb() {
+    if (slipDbP) return slipDbP;
+    slipDbP = new Promise((res, rej) => {
+      let q;
+      try { q = indexedDB.open(SLIP_DB, 1); } catch (e) { rej(e); return; }
+      q.onupgradeneeded = () => { if (!q.result.objectStoreNames.contains(SLIP_ST)) q.result.createObjectStore(SLIP_ST); };
+      q.onsuccess = () => res(q.result);
+      q.onerror = () => rej(q.error);
+    });
+    return slipDbP;
+  }
+  function slipTx(mode, fn) {
+    return slipDb().then(db => new Promise((res, rej) => {
+      const tx = db.transaction(SLIP_ST, mode), r = fn(tx.objectStore(SLIP_ST));
+      tx.oncomplete = () => res(r ? r.result : undefined);
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error);
+    }));
+  }
+  const slipPut = (id, v) => slipTx('readwrite', st => st.put(v, id));
+  const slipGet = (id) => slipTx('readonly', st => st.get(id));
+  const slipDrop = (id) => slipTx('readwrite', st => st.delete(id));
+  const slipAll = () => slipTx('readonly', st => st.getAllKeys());
+
+  let pendingSlip = null;                 // held until the entry it belongs to is saved
+  function slipOcr(x) {
+    if (!x) return null;
+    const lines = Array.isArray(x.lines) ? x.lines.slice(0, 20).map(l => ({
+      n: String(l && l.n != null ? l.n : '').slice(0, 60),
+      en: String(l && l.en != null ? l.en : '').slice(0, 60),
+      a: isFinite(l && l.a) ? Number(l.a) : null
+    })).filter(l => l.n || l.en) : [];
+    const o = {
+      lang: String(x.lang || '').slice(0, 5),
+      merchant: String(x.merchant || x.note || '').slice(0, 60),
+      merchant_en: String(x.merchant_en || '').slice(0, 60),
+      date: /^\d{4}-\d{2}-\d{2}$/.test(x.date || '') ? x.date : '',
+      cur: String(x.cur || '').toUpperCase().slice(0, 4),
+      total: isFinite(x.amount) ? Number(x.amount) : null,
+      sub: isFinite(x.sub) ? Number(x.sub) : null,
+      tax: isFinite(x.tax) ? Number(x.tax) : null,
+      lines
+    };
+    return (o.merchant || o.lines.length || o.total != null) ? o : null;
+  }
+
+  // ---------- the slip viewer ----------
+  let svId = null, svOcr = null, svUrl = '', svEn = false;
+  (function () {
+    const v = document.createElement('div');
+    v.id = 'slipView';
+    v.innerHTML = '<div class="sv-top"><button type="button" id="svClose">&#10005;</button><span class="sp"></span>'
+      + '<button type="button" id="svLang"></button><button type="button" id="svDel"></button></div>'
+      + '<div class="sv-body"><img id="svImg" alt=""><div class="sv-txt" id="svTxt"></div></div>';
+    document.body.appendChild(v);
+    document.getElementById('svClose').onclick = closeSlip;
+    document.getElementById('svLang').onclick = () => { svEn = !svEn; svText(); };
+    document.getElementById('svDel').onclick = () => {
+      if (!svId) return;
+      const id = svId;
+      closeSlip();
+      slipDrop(id).then(() => { SLIPS.delete(id); renderAll(); toast(t('slipDropped')); }).catch(() => {});
+    };
+  })();
+  function svText() {
+    const box = document.getElementById('svTxt'), o = svOcr;
+    const btn = document.getElementById('svLang');
+    const hasEn = !!(o && (o.merchant_en || (o.lines || []).some(l => l.en)));
+    btn.style.display = hasEn ? '' : 'none';
+    btn.textContent = svEn ? t('slipOrig') : t('slipEn');
+    if (!o) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    const en = svEn && hasEn;
+    const cur = o.cur || S.base;
+    const money2 = (a) => a == null ? '' : fmtA(a, cur) + ' ' + cur;
+    const name = (en && o.merchant_en) ? o.merchant_en : (o.merchant || '');
+    let h = '';
+    if (name) h += '<h4>' + esc(name) + '</h4>';
+    if (o.date) h += '<div class="d">' + esc(o.date) + '</div>';
+    h += (o.lines || []).map(l => '<div class="li"><span>' + esc(en && l.en ? l.en : (l.n || l.en)) + '</span><b class="num">'
+      + (l.a == null ? '' : fmtA(l.a, cur)) + '</b></div>').join('');
+    if (o.sub != null) h += '<div class="tot"><span>' + t('slipSub') + '</span><b class="num">' + fmtA(o.sub, cur) + '</b></div>';
+    if (o.tax != null) h += '<div class="tot"><span>' + t('slipTax') + '</span><b class="num">' + fmtA(o.tax, cur) + '</b></div>';
+    if (o.total != null) h += '<div class="tot big"><span>' + t('slipTotal') + '</span><b class="num">' + money2(o.total) + '</b></div>';
+    if (en) h += '<div class="mt">' + t('slipMT') + '</div>';
+    h += '<div class="mt">' + t('slipLocal') + '</div>';
+    box.innerHTML = h;
+  }
+  function showSlip(rec, id) {
+    if (svUrl) { URL.revokeObjectURL(svUrl); svUrl = ''; }
+    svId = id || null; svOcr = rec && rec.ocr ? rec.ocr : null;
+    svEn = !!(S.lang === 'en' && svOcr && svOcr.lang && svOcr.lang !== 'en');
+    const img = document.getElementById('svImg');
+    if (rec && rec.blob) { svUrl = URL.createObjectURL(rec.blob); img.src = svUrl; img.style.display = ''; }
+    else { img.removeAttribute('src'); img.style.display = 'none'; }
+    document.getElementById('svDel').textContent = t('slipDelete');
+    document.getElementById('svDel').style.display = id ? '' : 'none';
+    svText();
+    document.getElementById('slipView').classList.add('on');
+    document.getElementById('slipView').querySelector('.sv-body').scrollTop = 0;
+  }
+  function closeSlip() {
+    document.getElementById('slipView').classList.remove('on');
+    if (svUrl) { URL.revokeObjectURL(svUrl); svUrl = ''; }
+    svId = null;
+  }
+  function openSlip(id) {
+    slipGet(id).then(rec => { if (rec) showSlip(rec, id); else { SLIPS.delete(id); toast(t('slipGone')); } })
+      .catch(() => toast(t('slipGone')));
+  }
+
+  // ---------- the slip row inside the entry sheet ----------
+  (function () {
+    const row = document.createElement('div');
+    row.id = 'slipRow'; row.style.display = 'none';
+    row.innerHTML = '<button type="button" id="slipOpen"><img id="slipThumb" alt=""><span id="slipTxt"></span></button>'
+      + '<button type="button" id="slipDel"></button>';
+    scanBtn.parentNode.insertBefore(row, scanBtn.nextSibling);
+    document.getElementById('slipOpen').onclick = () => {
+      if (pendingSlip) { showSlip(pendingSlip, null); return; }
+      if (F.id) openSlip(F.id);
+    };
+    document.getElementById('slipDel').onclick = () => {
+      if (pendingSlip) { pendingSlip = null; renderSlipRow(F.id); toast(t('slipDropped')); return; }
+      if (!F.id) return;
+      const id = F.id;
+      slipDrop(id).then(() => { SLIPS.delete(id); renderSlipRow(id); renderAll(); toast(t('slipDropped')); }).catch(() => {});
+    };
+  })();
+  let thumbUrl = '';
+  function renderSlipRow(id) {
+    const row = document.getElementById('slipRow'), img = document.getElementById('slipThumb');
+    const show = (blob, txt) => {
+      if (thumbUrl) { URL.revokeObjectURL(thumbUrl); thumbUrl = ''; }
+      if (blob) { thumbUrl = URL.createObjectURL(blob); img.src = thumbUrl; img.style.display = ''; }
+      else img.style.display = 'none';
+      document.getElementById('slipTxt').textContent = txt;
+      document.getElementById('slipDel').textContent = t('slipRemove');
+      row.style.display = 'flex';
+    };
+    if (pendingSlip) { show(pendingSlip.blob, t('slipNew')); return; }
+    row.style.display = 'none';
+    if (!id || !SLIPS.has(id)) return;
+    slipGet(id).then(rec => { if (rec && F.id === id) show(rec.blob, t('slipSaved')); }).catch(() => {});
+  }
+
+  // ---------- hooks: open a sheet, save an entry, draw the lists ----------
+  const _openSheet = openSheet;
+  openSheet = function (id, mode) {
+    pendingSlip = null;
+    const r = _openSheet(id, mode);
+    renderSlipRow(id);
+    return r;
+  };
+  const _renderAll = renderAll, _renderEntries = renderEntries, _renderMineList = renderMineList;
+  renderAll = function () { _renderAll.apply(null, arguments); markSlips(); };
+  renderEntries = function () { _renderEntries.apply(null, arguments); markSlips(); };
+  renderMineList = function () { _renderMineList.apply(null, arguments); markSlips(); };
+  // a small camera badge on the row's icon — the meta line is already full
+  function markSlips() {
+    if (!SLIPS.size) return;
+    document.querySelectorAll('#entries .entry[data-id], #mineEntries .entry[data-id]').forEach(b => {
+      const id = b.dataset.id;
+      if (!SLIPS.has(id)) return;
+      const ic = b.querySelector('.ic');
+      if (!ic || ic.classList.contains('ck')) return;
+      b.classList.add('has-slip');
+      ic.title = t('slipSaved');
+      ic.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); openSlip(id); };
+    });
+  }
+  (function () {
+    const save = document.getElementById('fSave');
+    const core = save.onclick;
+    const allIds = () => new Set([...(S.entries || []).map(e => e.id), ...(S.mine || []).map(e => e.id)]);
+    save.onclick = function (ev) {
+      if (!pendingSlip) return core.call(this, ev);
+      const slip = pendingSlip, editing = F.id, before = allIds();
+      core.call(this, ev);
+      if (document.getElementById('sheet').classList.contains('on')) return;   // save was refused — keep the photo
+      let id = editing;
+      if (!id) { for (const x of allIds()) if (!before.has(x)) { id = x; break; } }
+      pendingSlip = null;
+      if (!id) return;
+      slipPut(id, { blob: slip.blob, ocr: slip.ocr, ts: Date.now() })
+        .then(() => { SLIPS.add(id); renderAll(); toast(t('slipKept')); })
+        .catch(() => {});
+    };
+  })();
   async function doScan(file) {
     if (!PIN) { const p = prompt(t('scanPin')); if (!p) return; PIN = p.trim(); }
     toast(t('scanning'));
     let b64;
-    try { b64 = await shrink(file); } catch (e) { toast(t('scanFail')); return; }
+    try {
+      const sh = await shrink(file);
+      b64 = sh.b64;
+      pendingSlip = { blob: sh.blob, ocr: null };   // kept even if the read fails, so the photo is not lost
+      renderSlipRow(F.id);
+    } catch (e) { toast(t('scanFail')); return; }
     let r, d;
     try {
       r = await fetch(OW.scan, { method: 'POST', headers: { 'content-type': 'application/json', 'x-pin': PIN }, body: JSON.stringify({ image: b64, media_type: 'image/jpeg' }) });
@@ -2755,6 +3057,7 @@
     if (r.status === 429) { toast(t('scanLimit')); return; }
     if (!d || !d.ok || !d.result || d.result.amount == null) { toast(t('scanFail')); return; }
     try { localStorage.setItem(OW.pinKey, PIN); } catch (e) {}
+    if (pendingSlip) { pendingSlip.ocr = slipOcr(d.result); renderSlipRow(F.id); }
     applyScan(d.result);
   }
   function applyScan(x) {
@@ -2776,6 +3079,16 @@
 
   (async function ownerBoot() {
     document.getElementById('scanBtnTxt').textContent = t('scanBtn');
+    slipAll().then(keys => {
+      const live = new Set([...(S.entries || []).map(e => e.id), ...(S.mine || []).map(e => e.id)]);
+      const old = Date.now() - 7 * 864e5;
+      (keys || []).forEach(k => {
+        if (live.has(k)) { SLIPS.add(k); return; }
+        if (MEMBER || window.__ppMember) { SLIPS.add(k); return; }   // a shared trip is not this device's trip
+        slipGet(k).then(r => { if (r && r.ts && r.ts < old) slipDrop(k); else SLIPS.add(k); }).catch(() => {});
+      });
+      if (SLIPS.size) renderAll();
+    }).catch(() => {});
     const urlCode = new URLSearchParams(location.search).get('t');
 
     if (urlCode) {
