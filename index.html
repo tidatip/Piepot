@@ -328,7 +328,7 @@
   .hero.mine .split .row { margin-top: 5px; font-size: 14px; opacity: .92; }
   .hero.mine .split .row:first-child { margin-top: 0; }
   .hero.mine .split .row b { font-weight: 600; opacity: 1; }
-  .hero.mine .split #mySrcRow { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--mine-rule); font-size: 13px; opacity: .8; }
+  .hero.mine .split #mySrcRow { margin-top: 0; padding-top: 0; border-top: 0; font-size: 13px; opacity: .8; }
   .hero.mine .split #mySrcRow b { font-weight: 500; }
   #myCats .cat .bar i { background: var(--in); }
   body.v-mine #hero { display: none; }
@@ -494,6 +494,12 @@
   .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
   .seg button.on.dep { color: var(--in); }
   .seg button.on.exp { color: var(--out); }
+  #typeSeg { grid-template-columns: 1fr 1fr 1fr; }
+  #typeSeg.two { grid-template-columns: 1fr 1fr; }
+  #typeSeg button { padding: 9px 4px; font-size: 13.5px; }
+  .seg button.on.xfer { color: var(--accent); }
+  .entry.xfer .amt { color: var(--ink-2); }
+  .entry.xfer .ic { background: var(--accent-soft); color: var(--accent); }
   .seg.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .seg.four button { padding: 9px 4px; font-size: 13px; }
   .rate-row { display: grid; grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: center; margin-top: 10px; font-weight: 500; }
@@ -646,21 +652,26 @@
       </div>
     </div>
 
-    <section class="hero mine">
-      <div class="lbl"><span data-i="myTripTotal"></span></div>
+    <section class="hero mine" id="myHero">
+      <div class="lbl"><span id="myLeftLbl"></span></div>
       <div class="big num"><span id="myTotal">0</span> <small class="cc"></small></div>
       <div class="thb num">&#8776; <span id="myTotalTHB">0</span> THB</div>
-      <div class="split">
-        <div class="row num"><span data-i="myShare"></span><b id="myShareV">0</b></div>
-        <div class="row num"><span data-i="myOwn"></span><b id="myOwnV">0</b></div>
-        <div class="row num" id="mySrcRow" style="display:none"><span data-i="paidWith"></span><b><span data-i="srcCash"></span> <span id="mySrcCash">0</span> · <span data-i="srcCard"></span> <span id="mySrcCard">0</span></b></div>
-      </div>
-      <div class="mywal" id="myWalWrap">
-        <div class="bar" id="myWalBar"><i id="myWalFill"></i></div>
-        <button type="button" class="walrow" id="myWalBtn"><span id="myWalLbl"></span><b class="num" id="myWalVal"></b></button>
+      <div class="spentline num" id="mySpentLine"></div>
+      <div class="pots">
+        <button type="button" class="pot" id="potBoxCash">
+          <span class="pn" id="potNameCash"></span>
+          <span class="pv num" id="potValCash">0</span>
+          <span class="bar" id="potBarCash"><i id="potFillCash"></i></span>
+          <span class="pd num" id="potDetCash"></span>
+        </button>
+        <button type="button" class="pot" id="potBoxCard">
+          <span class="pn" id="potNameCard"></span>
+          <span class="pv num" id="potValCard">0</span>
+          <span class="bar" id="potBarCard"><i id="potFillCard"></i></span>
+          <span class="pd num" id="potDetCard"></span>
+        </button>
       </div>
     </section>
-    <p class="mine-note" id="mineNote"></p>
     <p class="mine-note" id="minePrivate"></p>
 
     <div class="section-h" id="myCatHead"><h2 data-i="myByCat"></h2><span class="hint" id="myCatCount"></span></div>
@@ -732,7 +743,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v9.3</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot v9.8</p>
   </main>
 </div>
 
@@ -763,6 +774,24 @@
   .walrow b { font-weight: 600; opacity: 1; }
   .walrow.over b { color: #7E2412; }
   .walrow.unset { opacity: .8; }
+  .hero.mine .spentline { margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--mine-rule); font-size: 13px; opacity: .8; }
+  .hero.mine .pots { display: flex; gap: 12px; margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--mine-rule); }
+  .hero.mine .pot { flex: 1 1 0; min-width: 0; display: block; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+  .hero.mine .pot > span { display: block; }
+  .hero.mine .pot .pn { font-size: 12px; font-weight: 600; letter-spacing: .04em; opacity: .78; }
+  .hero.mine .pot .pv { font-size: 22px; font-weight: 600; line-height: 1.1; margin-top: 3px; }
+  .hero.mine .pot .bar { height: 6px; margin: 9px 0 7px; border-radius: 6px; background: var(--mine-rule); overflow: hidden; }
+  .hero.mine .pot .bar i { display: block; height: 100%; width: 0; border-radius: 6px; background: var(--mine-ink); opacity: .72; transition: width .4s ease; }
+  .hero.mine .pot .pd { font-size: 11px; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero.mine .pot.over .pv { color: #7E2412; }
+  .hero.mine .pot.over .bar i { background: #7E2412; opacity: 1; width: 100% !important; }
+  .hero.mine .pot.unset .pv { font-size: 18px; opacity: .8; }
+  .hero.mine .pot.unset .pd { white-space: normal; }
+  .hero.mine.neg .big { color: #7E2412; }
+
+  .walrow { font-size: 13px; }
+  .walrow > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hero.mine .mywal .walrow + .bar { margin-top: 13px; }
   .walrow.unset b { font-size: 17px; line-height: 1; }
   #walCur { display: grid; grid-auto-rows: 1fr; gap: 4px; }
 </style>
@@ -779,6 +808,7 @@
   <div class="seg" id="typeSeg">
     <button data-t="expense" class="on exp" data-i="typeExpense"></button>
     <button data-t="deposit" class="dep" data-i="typeDeposit"></button>
+    <button data-t="transfer" class="xfer" data-i="typeXfer"></button>
   </div>
 
   <div class="field">
@@ -828,8 +858,16 @@
     <div class="hint" id="depHint"></div>
   </div>
 
+  <div class="field" id="xferField" style="display:none">
+    <label data-i="xferFrom"></label>
+    <div class="choices" id="fXFrom"></div>
+    <label data-i="xferTo" style="display:block;margin-top:12px"></label>
+    <div class="choices" id="fXTo"></div>
+    <div class="hint" data-i="xferHint"></div>
+  </div>
+
   <div class="field" id="srcField">
-    <label data-i="srcLabel"></label>
+    <label id="srcLbl"></label>
     <div class="seg" id="fSrc">
       <button data-s="cash" data-i="srcCash"></button>
       <button data-s="card" data-i="srcCard"></button>
@@ -918,7 +956,7 @@
 
 <div class="sheet" id="walSheet" role="dialog" aria-modal="true">
   <div class="grab"></div>
-  <h2 data-i="walTitle"></h2>
+  <h2 id="walTitleH"></h2>
   <p class="hint" data-i="walHint"></p>
   <div class="field">
     <label data-i="amount"></label>
@@ -960,6 +998,7 @@
     { id: 'other', th: 'อื่น ๆ', en: 'Other', icon: 'M12 5v.01M12 12v.01M12 19v.01' }
   ];
   const DEPOSIT_ICON = 'M12 3v18M6 9l6-6 6 6';
+  const XFER_ICON = 'M4 9h13l-4-4M20 15H7l4 4';
   const GROUP_ICON = 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75';
   const CUR = {
     JPY: { sym: '¥', per: 100 },
@@ -989,6 +1028,13 @@
       walHint: 'เงินที่กันไว้ใช้ส่วนตัวในทริปนี้ คนละกระเป๋ากันกับกองกลาง · หักเฉพาะรายการส่วนตัวเท่านั้น',
       walTopupNote: (m) => `เติมเพิ่มระหว่างทางอีก ${m} · รวมในยอดเตรียมไว้แล้ว`,
       walSet: 'ตั้งเงินส่วนตัวที่เตรียมไว้', walClear: 'ล้าง',
+      walSetShort: 'ตั้งยอดที่เตรียมไว้', walUsedOf: (a, b) => `ใช้ไป ${a} จาก ${b}`,
+      walUsedUnset: (a) => `ใช้ไป ${a} · ตั้งยอดที่เตรียมไว้`,
+      walSpentAll: (a, b) => `ใช้ไปแล้ว ${a} · เตรียมไว้ ${b}`,
+      myLeftTotal: 'เงินส่วนตัวที่เหลือ', myOverTotal: 'ใช้เกินเงินที่เตรียมไว้',
+      walSetCash: 'ตั้งเงินสดที่เตรียมไว้', walSetCard: 'ตั้งวงเงินบัตรที่เตรียมไว้',
+      walTitleCash: 'เงินสดส่วนตัวที่เตรียมไว้', walTitleCard: 'วงเงินบัตรส่วนตัวที่เตรียมไว้',
+      walPrepSrc: (s, m) => `${s} · เตรียมไว้ ${m}`,
       walPrep: (m) => `เตรียมไว้ ${m}`,
       walLeft: (m) => `เหลือ ${m}`, walOver: (m) => `ใช้เกิน ${m}`,
       walSaved: 'บันทึกแล้ว', walCleared: 'ล้างแล้ว',
@@ -1019,14 +1065,20 @@
       navSum: 'สรุป', navList: 'รายการ', navSet: 'ตั้งค่า',
       addEntry: 'เพิ่มรายการ', editEntry: 'แก้ไขรายการ', typeExpense: 'จ่าย', typeDeposit: 'รับ', amount: 'จำนวนเงิน', note: 'รายละเอียด',
       notePhExp: 'เช่น ราเมงกลางวัน, ค่าน้ำมัน, ตั๋ว Alpine Route', notePhDep: 'เช่น รับเงินก่อนออกเดินทาง, รับเพิ่มรอบ 2',
-      srcLabel: 'แหล่งเงิน', srcCash: 'เงินสด', srcCard: 'บัตร', srcRemaining: 'คงเหลือ',
+      srcLabel: 'แหล่งเงิน', srcInto: 'เติมเข้า', srcCash: 'เงินสด', srcCard: 'บัตร', srcRemaining: 'คงเหลือ',
       category: 'หมวด', paidBy: 'ใครจ่าย', paidByHint: 'ถ้าเพื่อนสำรองจ่ายเอง เลือกชื่อคนนั้น ระบบจะคิดคืนให้ตอนปิดทริป', splitAmong: 'หารกัน', depositBy: 'รับจากใคร', date: 'วันที่',
       delete: 'ลบ', cancel: 'ยกเลิก', save: 'บันทึก', undo: 'เลิกทำ', fund: 'กองกลาง', everyone: 'ทุกคน', shortTitle: (bal, short) => `กองกลางเหลือ ${bal} ไม่พอ ขาดอีก ${short}`, shortNone: 'กองกลางพอจ่าย แต่มีคนสำรองจ่ายบางส่วน', advBy: 'ใครสำรองจ่ายส่วนที่ขาด', advAmt: 'ยอดที่สำรองจ่าย', fundPart: 'ส่วนที่กองจ่าย', advHintOn: (n, v) => `${n} สำรอง ${v} จะได้คืนตอนปิดทริป`, advHintOff: 'ถ้าไม่เลือกใคร จะถือว่ากองกลางจ่ายทั้งหมด (ยอดกองติดลบ)', fromFundPlus: (f, n, v) => `กอง ${f} + ${n} สำรอง ${v}`, sumAdvancedPart: (n, v) => `(${n} สำรอง ${v})`, everyoneHint: (n) => `บันทึกแยกเป็นรายการของแต่ละคน ${n} คน ยอดเท่ากัน`, depositedAllToast: (v, n) => `รับ ${v} จากทุกคน (${n} รายการ) แล้ว`,
       getBack: 'ได้คืน', even: '', net: 'สุทธิ',
       metaIn: 'รับ', metaPaid: 'สำรองจ่าย', metaShare: 'ส่วนที่ต้องออก',
       settleLine: (rf, col, bal) => `ปิดทริป: กองคืนรวม ${rf} · เก็บเพิ่มรวม ${col} · เหลือในกอง ${bal}`,
       noEntriesYet: 'ยังไม่มีรายการ กดปุ่ม + เพื่อเริ่มบันทึก', nExpenses: (n) => `${n} รายการ`, noExpenses: 'ยังไม่มีค่าใช้จ่าย',
-      paysIn: (n) => `${n} จ่ายเข้ากอง`, refundTo: (n) => `กองคืนให้ ${n}`, allEven: 'ทุกคนหายกันแล้ว ไม่ต้องโอนเงิน',
+      paysIn: (n) => `${n} ต้องจ่ายเพิ่ม`, refundTo: (n) => `${n} ได้คืน`, allEven: 'ทุกคนหายกันแล้ว ไม่ต้องโอนเงิน',
+      typeXfer: 'จ่ายคืน', xferFrom: 'ใครจ่าย', xferTo: 'จ่ายให้ใคร',
+      xferHint: 'เงินที่จ่ายกันเองนอกกองกลาง เช่น คืนเงินให้คนที่สำรองจ่ายไปก่อน · ไม่กระทบยอดกองกลางและยอดใช้จ่ายรวมของทริป',
+      xferNeed: 'เลือกคนจ่ายกับคนรับให้ครบ และต้องไม่ใช่คนเดียวกัน',
+      xferToast: (a, b, v) => `${a} จ่ายให้ ${b} ${v} แล้ว`,
+      metaXferOut: 'จ่ายให้เพื่อน', metaXferIn: 'รับจากเพื่อน', sumXfer: '(จ่ายคืน)',
+      notePhXfer: 'เช่น คืนค่าที่พักที่สำรองจ่ายไว้',
       all: 'ทั้งหมด', emptyList: 'ยังไม่มีรายการ', emptyListHint: 'กดปุ่ม + ด้านล่างเพื่อบันทึกรายการแรก', daySpent: 'ใช้ไป',
       depositDefault: 'รับเงิน', putIn: (n) => `รับจาก ${n}`, fromFund: 'จากกอง', advanced: (n) => `${n} สำรองจ่าย`,
       splitN: (n) => `หาร ${n}`, alone: (n) => `${n} คนเดียว`, reimburse: 'รอคืน',
@@ -1044,7 +1096,7 @@
       firstRun: 'เริ่มจากตั้งชื่อทริป สมาชิก และสกุลเงิน แล้วค่อยกด + เพื่อบันทึก',
       months: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'], days: ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'],
       fmtDate: (D, d, M) => `${D} ${d} ${M}`, langBtn: 'ไทย',
-      navMine: 'ของฉัน', myTripTotal: 'ทริปนี้ฉันใช้ไป', myShare: 'ส่วนแบ่งค่าใช้จ่ายกลุ่ม', myOwn: 'ส่วนตัว',
+      navMine: 'ของฉัน', myTripTotal: 'ใช้จ่ายส่วนตัวทริปนี้', myShare: 'ส่วนแบ่งค่าใช้จ่ายกลุ่ม', myOwn: 'ส่วนตัว',
       myByCat: 'แยกตามหมวด', myEntries: 'รายการส่วนตัว', paidWith: 'จ่ายด้วย', backToFund: 'กองกลางทริป',
       mineNote: 'ส่วนแบ่งค่าใช้จ่ายกลุ่ม = ส่วนที่ต้องออกจริง ไม่ใช่เงินที่จ่ายเข้ากอง (ที่จ่ายเกินได้คืนตอนปิดทริป)',
       minePrivate: 'หน้านี้อยู่ในเครื่องนี้เท่านั้น ไม่ถูกส่งไปในสรุปหรือรูปที่แชร์ให้เพื่อน',
@@ -1067,6 +1119,13 @@
       walHint: 'What you set aside to spend on yourself — your own wallet, separate from the group fund, and only your own entries come off it',
       walTopupNote: (m) => `Plus ${m} topped up along the way — already counted`,
       walSet: 'Set what you brought for yourself', walClear: 'Clear',
+      walSetShort: 'Set what you brought', walUsedOf: (a, b) => `${a} spent of ${b}`,
+      walUsedUnset: (a) => `${a} spent · set what you brought`,
+      walSpentAll: (a, b) => `${a} spent of ${b} set aside`,
+      myLeftTotal: 'My money left', myOverTotal: 'Over what you set aside',
+      walSetCash: 'Set the cash you brought', walSetCard: 'Set the card money you set aside',
+      walTitleCash: 'Cash you brought for yourself', walTitleCard: 'Card money set aside for yourself',
+      walPrepSrc: (s, m) => `${s} · ${m} set aside`,
       walPrep: (m) => `${m} set aside`,
       walLeft: (m) => `${m} left`, walOver: (m) => `${m} over`,
       walSaved: 'Saved', walCleared: 'Cleared',
@@ -1097,14 +1156,20 @@
       navSum: 'Summary', navList: 'Entries', navSet: 'Settings',
       addEntry: 'New entry', editEntry: 'Edit entry', typeExpense: 'Expense', typeDeposit: 'Chip In', amount: 'Amount', note: 'Description',
       notePhExp: 'e.g. Ramen lunch, fuel, Alpine Route tickets', notePhDep: 'e.g. Chip-in before departure, top-up #2',
-      srcLabel: 'Source', srcCash: 'Cash', srcCard: 'Card', srcRemaining: 'Remaining',
+      srcLabel: 'Source', srcInto: 'Top up into', srcCash: 'Cash', srcCard: 'Card', srcRemaining: 'Remaining',
       category: 'Category', paidBy: 'Paid by', paidByHint: 'If a friend paid out of pocket, pick their name — they cash out at trip end', splitAmong: 'Split among', depositBy: 'Who chipped in', date: 'Date',
       delete: 'Delete', cancel: 'Cancel', save: 'Save', undo: 'Undo', fund: 'Fund', everyone: 'All', shortTitle: (bal, short) => `Fund has only ${bal} — short by ${short}`, shortNone: 'Fund can cover it, but someone advances part', advBy: 'Who advances the shortfall', advAmt: 'Amount advanced', fundPart: 'Paid by fund', advHintOn: (n, v) => `${n} advances ${v}, cashes out at trip end`, advHintOff: 'If no one is picked, the fund pays it all (balance goes negative)', fromFundPlus: (f, n, v) => `Fund ${f} + ${n} advanced ${v}`, sumAdvancedPart: (n, v) => `(${n} advanced ${v})`, everyoneHint: (n) => `Saved as ${n} separate entries, one per person, same amount`, depositedAllToast: (v, n) => `Chipped in ${v} from everyone (${n} entries)`,
       getBack: 'Cash Out', even: '', net: 'net',
       metaIn: 'Chipped in', metaPaid: 'advanced', metaShare: 'share',
       settleLine: (rf, col, bal) => `Trip end: cash out ${rf} · collect ${col} · left in fund ${bal}`,
       noEntriesYet: 'No entries yet — tap + to start', nExpenses: (n) => `${n} ${n === 1 ? 'entry' : 'entries'}`, noExpenses: 'No expenses yet',
-      paysIn: (n) => `${n} pays the fund`, refundTo: (n) => `Cash out to ${n}`, allEven: 'Everyone is even — nothing to transfer',
+      paysIn: (n) => `${n} pays in`, refundTo: (n) => `${n} gets back`, allEven: 'Everyone is even — nothing to transfer',
+      typeXfer: 'Settle up', xferFrom: 'Who paid', xferTo: 'Paid to',
+      xferHint: 'Money handed straight to each other, outside the pot — paying someone back for what they advanced, for example. It changes neither the fund balance nor the trip total',
+      xferNeed: 'Pick who paid and who was paid — they cannot be the same person',
+      xferToast: (a, b, v) => `${a} paid ${b} ${v}`,
+      metaXferOut: 'paid a friend', metaXferIn: 'got from a friend', sumXfer: '(settled)',
+      notePhXfer: 'e.g. paying back the hotel she covered',
       all: 'All', emptyList: 'No entries yet', emptyListHint: 'Tap + below to record the first one', daySpent: 'Spent',
       depositDefault: 'Chip In', putIn: (n) => `${n} chipped in`, fromFund: 'From fund', advanced: (n) => `${n} advanced`,
       splitN: (n) => `split ${n}`, alone: (n) => `${n} only`, reimburse: 'Repay',
@@ -1122,7 +1187,7 @@
       firstRun: 'Start with the trip name, members and currency, then tap + to record',
       months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       fmtDate: (D, d, M) => `${D} ${d} ${M}`, langBtn: 'EN',
-      navMine: 'My Slice', myTripTotal: 'My trip total', myShare: 'My share of group spend', myOwn: 'Outside the pot',
+      navMine: 'My Slice', myTripTotal: 'My personal spending', myShare: 'My share of group spend', myOwn: 'Outside the pot',
       myByCat: 'By category', myEntries: 'Outside the pot', paidWith: 'Paid with', backToFund: 'Trip fund',
       mineNote: 'Your share of group spend is what the trip costs you — not what you chipped in (extra comes back at trip end)',
       minePrivate: 'This page stays on this device — never part of the summary or image you share',
@@ -1171,7 +1236,12 @@
     if (!Array.isArray(o.mine)) o.mine = [];
     o.mine = o.mine.filter(e => e && e.id && e.orig != null);
     o.mine.forEach(e => { if (!e.cur) e.cur = 'JPY'; if (!e.cat) e.cat = 'other'; if (e.src !== 'card') e.src = 'cash'; if (!e.date) e.date = '2000-01-01'; if (e.type !== 'deposit') e.type = 'expense'; });
-    if (!(o.myWallet && o.myWallet.orig > 0 && o.myWallet.cur)) o.myWallet = null;
+    if (o.myWallet && typeof o.myWallet.orig === 'number') o.myWallet = { cash: { orig: o.myWallet.orig, cur: o.myWallet.cur }, card: null };  // up to v9.3 there was a single pot — it was cash
+    if (o.myWallet) {
+      const pot = (p) => (p && p.orig > 0 && p.cur) ? { orig: p.orig, cur: p.cur } : null;
+      o.myWallet = { cash: pot(o.myWallet.cash), card: pot(o.myWallet.card) };
+      if (!o.myWallet.cash && !o.myWallet.card) o.myWallet = null;
+    } else o.myWallet = null;
     if (o.meId && !o.members.some(m => m.id === o.meId)) o.meId = null;
     if (!o.meId && o.members.length === 1) o.meId = o.members[0].id;
     delete o.rate;
@@ -1228,9 +1298,14 @@
   // ---------- calculations ----------
   function calc() {
     const r = { fundIn: 0, fundOut: 0, spent: 0, byCat: {}, per: {} };
-    S.members.forEach(m => r.per[m.id] = { in: 0, paid: 0, share: 0, net: 0 });
+    S.members.forEach(m => r.per[m.id] = { in: 0, paid: 0, share: 0, xfer: 0, net: 0 });
     S.entries.forEach(e => {
       const a = amt(e);
+      if (e.type === 'transfer') {        // handed straight to each other — the pot and the trip total stay untouched
+        if (r.per[e.from]) r.per[e.from].xfer += a;
+        if (r.per[e.to]) r.per[e.to].xfer -= a;
+        return;
+      }
       if (e.type === 'deposit') {
         r.fundIn += a;
         if (r.per[e.by]) r.per[e.by].in += a;
@@ -1252,7 +1327,7 @@
     });
     r.hasCard = S.entries.some(e => e.src === 'card');
     r.balance = r.fundIn - r.fundOut;
-    S.members.forEach(m => { const p = r.per[m.id]; p.net = p.in + p.paid - p.share; });
+    S.members.forEach(m => { const p = r.per[m.id]; p.net = p.in + p.paid + p.xfer - p.share; });
     r.myShare = (S.meId && r.per[S.meId]) ? r.per[S.meId].share : 0;
     return r;
   }
@@ -1319,6 +1394,7 @@
           <div class="slice-hd"><span class="name">${esc(m.name)}</span><span class="net num ${cls}"><span class="t">${t('net')}</span>${fmtSigned(p.net)}</span></div>
           <div class="meta num">${t('metaIn')} <span class="nw">${money(p.in)}</span></div>
           <div class="meta num">${t('metaPaid')} <span class="nw">${money(p.paid)}</span></div>
+          ${Math.abs(p.xfer) > 0.005 ? `<div class="meta num">${t(p.xfer > 0 ? 'metaXferOut' : 'metaXferIn')} <span class="nw">${money(Math.abs(p.xfer))}</span></div>` : ''}
           <div class="meta num">${t('metaShare')} <span class="nw">${money(p.share)}</span> <span class="nw">${approx(p.share)}</span></div>
         </div></div>`;
     }).join('');
@@ -1382,12 +1458,12 @@
     $('selDelete').textContent = t('deleteSel', selIds.size);
     $('selDelete').disabled = !selIds.size;
     const counts = {};
-    S.entries.forEach(e => { const k = e.type === 'deposit' ? 'deposit' : e.cat; counts[k] = (counts[k] || 0) + 1; });
-    const chips = [{ id: 'all', label: t('all') }, { id: 'deposit', label: t('typeDeposit') }, ...CATS.map(c => ({ id: c.id, label: catName(c) }))].filter(c => c.id === 'all' || counts[c.id]);
+    S.entries.forEach(e => { const k = e.type === 'deposit' ? 'deposit' : e.type === 'transfer' ? 'transfer' : e.cat; counts[k] = (counts[k] || 0) + 1; });
+    const chips = [{ id: 'all', label: t('all') }, { id: 'deposit', label: t('typeDeposit') }, { id: 'transfer', label: t('typeXfer') }, ...CATS.map(c => ({ id: c.id, label: catName(c) }))].filter(c => c.id === 'all' || counts[c.id]);
     $('filters').innerHTML = chips.map(c => `<button class="chip ${filter === c.id ? 'on' : ''}" data-f="${c.id}">${c.label}${c.id !== 'all' ? ` ${counts[c.id]}` : ''}</button>`).join('');
     $('filters').querySelectorAll('button').forEach(b => b.onclick = () => { filter = b.dataset.f; renderEntries(); });
 
-    let list = S.entries.filter(e => filter === 'all' || (filter === 'deposit' ? e.type === 'deposit' : e.type === 'expense' && e.cat === filter));
+    let list = S.entries.filter(e => filter === 'all' || (filter === 'deposit' ? e.type === 'deposit' : filter === 'transfer' ? e.type === 'transfer' : e.type === 'expense' && e.cat === filter));
     list = list.slice().sort((a, b) => b.date.localeCompare(a.date) || (b.ts || 0) - (a.ts || 0));
     if (!list.length) { $('entries').innerHTML = `<div class="empty"><b>${t('emptyList')}</b>${t('emptyListHint')}</div>`; return; }
     const days = {};
@@ -1455,6 +1531,9 @@
   const subAmt = (e) => [e.cur !== S.base ? moneyC(e.orig, e.cur) : '', e.cur === 'THB' ? '' : approx(amt(e))].filter(Boolean).join(' · ');
   function entryRow(e) {
     const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
+    if (e.type === 'transfer') {
+      return `<button class="entry xfer" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(XFER_ICON)}</span>`}<span><span class="t">${esc(mname(e.from))} \u2192 ${esc(mname(e.to))}</span><span class="m">${t('typeXfer')}${e.note ? ' · ' + esc(e.note) : ''}</span></span><span class="amt num">${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+    }
     if (e.type === 'deposit') {
       return `<button class="entry deposit ${e.src === 'card' ? 'src-card' : e.src === 'cash' ? 'src-cash' : ''}" data-id="${e.id}">${selMode ? `<span class="ic ck ${selIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(DEPOSIT_ICON)}</span>`}<span><span class="t">${esc(e.note || t('depositDefault'))}</span><span class="m">${t('putIn', esc(mname(e.by)))}${e.src ? ` <span class="pill src-${e.src}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span>` : ''}</span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
     }
@@ -1467,10 +1546,10 @@
 
   // ---------- my slice (personal spending, never part of the fund) ----------
   function calcMine() {
-    const r = { total: 0, in: 0, byCat: {}, bySrc: { cash: 0, card: 0 }, hasCard: false, n: 0 };
+    const r = { total: 0, in: 0, byCat: {}, bySrc: { cash: 0, card: 0 }, inSrc: { cash: 0, card: 0 }, hasCard: false, n: 0 };
     (S.mine || []).forEach(e => {
       const a = amt(e);
-      if (e.type === 'deposit') { r.in += a; return; }
+      if (e.type === 'deposit') { r.in += a; r.inSrc[e.src === 'card' ? 'card' : 'cash'] += a; return; }
       r.total += a; r.n++;
       r.byCat[e.cat] = (r.byCat[e.cat] || 0) + a;
       r.bySrc[e.src === 'card' ? 'card' : 'cash'] += a;
@@ -1482,22 +1561,23 @@
   const mineIds = new Set();
   function renderMine(r) {
     const m = calcMine();
-    const hasMe = !!(S.meId && member(S.meId));
-    const share = hasMe ? r.myShare : 0;
-    const total = share + m.total;
-    $('myTotal').textContent = fmt(total);
-    $('myTotalTHB').textContent = fmtTHB(total);
-    $('myShareV').textContent = hasMe ? money(share) : '—';
-    $('myOwnV').textContent = money(m.total);
+    const total = m.total;                           // this page is personal money only — no group share in it
+    // a source with nothing set aside has no balance of its own, so it stays out of the headline
+    const live = ['cash', 'card'].map(k => ({ prep: walPrepared(m, k), spent: m.bySrc[k] })).filter(p => p.prep > 0);
+    const prepAll = live.reduce((s, p) => s + p.prep, 0);
+    const spentAll = live.reduce((s, p) => s + p.spent, 0);
+    const leftAll = prepAll - spentAll;
+    $('myLeftLbl').textContent = !prepAll ? t('myTripTotal') : leftAll < 0 ? t('myOverTotal') : t('myLeftTotal');
+    $('myTotal').textContent = fmt(prepAll ? Math.abs(leftAll) : total);
+    $('myTotalTHB').textContent = fmtTHB(prepAll ? Math.abs(leftAll) : total);
+    $('myHero').classList.toggle('neg', prepAll > 0 && leftAll < 0);
+    $('mySpentLine').style.display = prepAll ? '' : 'none';
+    $('mySpentLine').textContent = t('walSpentAll', fmt(spentAll) + ' ' + S.base, fmtS(prepAll));
     renderWallet(m);
-    $('mySrcRow').style.display = m.hasCard ? '' : 'none';
-    if (m.hasCard) { $('mySrcCash').textContent = fmt(m.bySrc.cash); $('mySrcCard').textContent = fmt(m.bySrc.card); }
     $('fundLinkBal').textContent = money(r.balance);
     $('fundLink').onclick = () => showView('sum');
-    $('mineNote').textContent = hasMe ? t('mineNote') : t('meNotSet');
     $('minePrivate').textContent = t('minePrivate');
-    $('mePickCard').style.display = hasMe ? 'none' : '';
-    if (!hasMe) renderMePick($('mePick'));
+    $('mePickCard').style.display = 'none';
     const cats = CATS.map(c => ({ ...c, a: m.byCat[c.id] || 0 })).filter(c => c.a > 0).sort((a, b) => b.a - a.a);
     const max = cats.length ? cats[0].a : 1;
     $('myCatCount').textContent = t('nExpenses', m.n);
@@ -1506,31 +1586,32 @@
     $('myCats').innerHTML = cats.map(c => `<div class="cat"><span class="n">${catName(c)} <span class="hint">${Math.round(c.a / m.total * 100)}%</span></span><span class="a num">${money(c.a)}</span><div class="bar"><i style="width:${c.a / max * 100}%"></i></div></div>`).join('');
     renderMineList();
   }
-  // money set aside, plus anything topped up along the way
-  const walPrepared = (m) => (S.myWallet ? toBase(S.myWallet.orig, S.myWallet.cur) : 0) + m.in;
-  function renderWallet(m) {
-    const prep = walPrepared(m);
-    const bar = $('myWalBar'), row = $('myWalBtn');
-    row.classList.toggle('unset', !prep);
+  // one pot per source — money set aside for it, plus anything topped up into it along the way
+  const walPot = (k) => (S.myWallet && S.myWallet[k]) ? toBase(S.myWallet[k].orig, S.myWallet[k].cur) : 0;
+  const walPrepared = (m, k) => walPot(k) + m.inSrc[k];
+  const fmtS = (n) => fmt(n).replace(/\.00$/, '');
+  function renderWalletRow(m, k) {
+    const C = k === 'card' ? 'Card' : 'Cash';
+    const prep = walPrepared(m, k), spent = m.bySrc[k], left = prep - spent;
+    const box = $('potBox' + C);
+    box.classList.toggle('unset', !prep);
+    box.classList.toggle('over', prep > 0 && left < 0);
+    $('potName' + C).textContent = t(k === 'card' ? 'srcCard' : 'srcCash');
     if (!prep) {
-      bar.classList.add('off');
-      row.classList.remove('over');
-      $('myWalLbl').textContent = t('walSet');
-      $('myWalVal').textContent = '+';
+      $('potVal' + C).textContent = '+';
+      $('potBar' + C).style.display = 'none';
+      $('potDet' + C).textContent = spent > 0 ? t('walUsedUnset', fmtS(spent)) : t('walSetShort');
       return;
     }
-    const left = prep - m.total;                     // personal entries only — the group fund is not touched
-    const pct = Math.max(0, Math.min(100, m.total / prep * 100));
-    bar.classList.remove('off');
-    bar.classList.toggle('over', left < 0);
-    row.classList.toggle('over', left < 0);
-    $('myWalFill').style.width = (left < 0 ? 100 : pct) + '%';
-    $('myWalLbl').textContent = t('walPrep', money(prep));
-    $('myWalVal').textContent = left < 0 ? t('walOver', money(-left)) : t('walLeft', money(left));
+    $('potVal' + C).textContent = (left < 0 ? '\u2212' : '') + fmt(Math.abs(left));
+    $('potBar' + C).style.display = '';
+    $('potFill' + C).style.width = Math.max(0, Math.min(100, left / prep * 100)) + '%';   // the bar shows what is LEFT
+    $('potDet' + C).textContent = t('walUsedOf', fmtS(spent), fmtS(prep));
   }
+  function renderWallet(m) { renderWalletRow(m, 'cash'); renderWalletRow(m, 'card'); }
   function mineRow(e) {
     if (e.type === 'deposit') {
-      return `<button class="entry deposit src-cash" data-id="${e.id}">${mineSel ? `<span class="ic ck ${mineIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(DEPOSIT_ICON)}</span>`}<span><span class="t">${esc(e.note || t('topupDefault'))}</span><span class="m">${t('mineTopup')}</span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
+      return `<button class="entry deposit ${e.src === 'card' ? 'src-card' : 'src-cash'}" data-id="${e.id}">${mineSel ? `<span class="ic ck ${mineIds.has(e.id) ? 'on' : ''}">\u2713</span>` : `<span class="ic">${svgIcon(DEPOSIT_ICON)}</span>`}<span><span class="t">${esc(e.note || t('topupDefault'))}</span><span class="m">${t('mineTopup')} <span class="pill src-${e.src === 'card' ? 'card' : 'cash'}">${t(e.src === 'card' ? 'srcCard' : 'srcCash')}</span></span></span><span class="amt num">+${fmt(amt(e))} <small>${S.base}</small><span class="b">${subAmt(e)}</span></span></button>`;
     }
     const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
     const src = e.src === 'card' ? 'src-card' : 'src-cash';
@@ -1715,6 +1796,8 @@
     F.advOrig = e && e.adv ? e.adv.orig : null;
     F.advManual = !!(e && e.adv);
     F.src = e ? (e.src === 'card' ? 'card' : 'cash') : (S.lastSrc === 'card' ? 'card' : 'cash');
+    F.xFrom = e && e.from ? e.from : (S.members[0] ? S.members[0].id : null);
+    F.xTo = e && e.to ? e.to : (S.members.find(m => m.id !== F.xFrom) || {}).id || null;
     F.grpIds = [];
     if (e && e.type === 'deposit') {
       const batch = e.grp
@@ -1809,41 +1892,53 @@
   function closeSheet() { unlockScroll(); $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); $('walSheet').classList.remove('on'); }
 
   // ---------- money set aside for myself ----------
-  let walCur = 'THB';
+  let walCur = 'THB', walKind = 'cash';
   function renderWalSheet() {
     const curs = [...new Set([S.base, 'THB', walCur])];
     $('walCur').innerHTML = curs.map(c => `<button type="button" data-cur="${c}" class="${walCur === c ? 'on' : ''}">${c}</button>`).join('');
     $('walCur').querySelectorAll('button').forEach(b => b.onclick = () => { walCur = b.dataset.cur; renderWalSheet(); });
     const v = amtExprVal($('walAmount').value);
     $('walConv').textContent = (v > 0) ? [walCur !== S.base ? money(toBase(v, walCur)) : '', approx(toBase(v, walCur))].filter(Boolean).join(' · ') : '';
-    const inAmt = calcMine().in;
+    const inAmt = calcMine().inSrc[walKind];
     $('walTopupNote').textContent = inAmt > 0 ? t('walTopupNote', money(inAmt)) : '';
+    $('walTitleH').textContent = t(walKind === 'card' ? 'walTitleCard' : 'walTitleCash');
   }
-  function openWalSheet() {
+  function openWalSheet(kind) {
     if (window.__ppMember) { toast(t('shViewerToast')); return; }
-    walCur = S.myWallet ? S.myWallet.cur : S.base;
-    $('walAmount').value = S.myWallet ? fmtAmtExpr(String(S.myWallet.orig)) : '';
-    $('walClear').style.display = S.myWallet ? '' : 'none';
+    walKind = kind === 'card' ? 'card' : 'cash';
+    const pot = S.myWallet ? S.myWallet[walKind] : null;
+    walCur = pot ? pot.cur : S.base;
+    $('walAmount').value = pot ? fmtAmtExpr(String(pot.orig)) : '';
+    $('walClear').style.display = pot ? '' : 'none';
     renderWalSheet();
     showSheet('walSheet');
-    if (!S.myWallet) setTimeout(() => $('walAmount').focus(), 300);
+    if (!pot) setTimeout(() => $('walAmount').focus(), 300);
   }
   $('walAmount').addEventListener('input', renderWalSheet);
   $('walCancel').onclick = closeSheet;
-  $('walClear').onclick = () => { S.myWallet = null; save(); closeSheet(); renderAll(); toast(t('walCleared')); };
+  function setWalPot(p) {
+    const w = S.myWallet ? { cash: S.myWallet.cash || null, card: S.myWallet.card || null } : { cash: null, card: null };
+    w[walKind] = p;
+    S.myWallet = (w.cash || w.card) ? w : null;
+  }
+  $('walClear').onclick = () => { setWalPot(null); save(); closeSheet(); renderAll(); toast(t('walCleared')); };
   $('walSave').onclick = () => {
     const v = amtExprVal($('walAmount').value);
     if (!(v > 0)) { toast(t('needAmount')); $('walAmount').focus(); return; }
-    S.myWallet = { orig: v, cur: walCur };
+    setWalPot({ orig: v, cur: walCur });
     save(); closeSheet(); renderAll(); toast(t('walSaved'));
   };
-  $('myWalBtn').onclick = openWalSheet;
+  $('potBoxCash').onclick = () => openWalSheet('cash');
+  $('potBoxCard').onclick = () => openWalSheet('card');
   $('fab').onclick = () => openSheet(null, curView === 'mine' ? 'mine' : 'fund');
   $('scrim').onclick = closeSheet; $('fCancel').onclick = closeSheet;
 
   function renderForm() {
     const mineMode = F.mode === 'mine';
     const isExp = F.type === 'expense';
+    const isXfer = F.type === 'transfer';
+    $('typeSeg').classList.toggle('two', mineMode);
+    $('typeSeg').querySelectorAll('button')[2].style.display = mineMode ? 'none' : '';
     $('typeSeg').style.display = '';
     $('typeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === F.type));
     const segB = $('typeSeg').querySelectorAll('button');
@@ -1854,8 +1949,8 @@
     $('paidField').style.display = (isExp && !mineMode) ? '' : 'none';
     const solo = S.members.length === 1;
     $('splitField').style.display = (isExp && !mineMode && !solo) ? '' : 'none';
-    $('depField').style.display = (isExp || mineMode || solo) ? 'none' : '';
-    $('fNote').placeholder = mineMode ? (isExp ? t('notePhMine') : t('notePhTopup')) : isExp ? t('notePhExp') : t('notePhDep');
+    $('depField').style.display = (isExp || isXfer || mineMode || solo) ? 'none' : '';
+    $('fNote').placeholder = mineMode ? (isExp ? t('notePhMine') : t('notePhTopup')) : isXfer ? t('notePhXfer') : isExp ? t('notePhExp') : t('notePhDep');
     const curs = [...new Set([S.base, 'THB', F.cur])];
     $('fCur').innerHTML = curs.map(c => `<button data-cur="${c}" class="${F.cur === c ? 'on' : ''}">${c}</button>`).join('');
     $('fCur').querySelectorAll('button').forEach(b => b.onclick = () => { F.cur = b.dataset.cur; renderForm(); });
@@ -1870,7 +1965,17 @@
     $('fDep').innerHTML = (F.id ? '' : `<button data-d="all" class="${F.by === 'all' ? 'on' : ''}">${t('everyone')}</button>`) + S.members.map(m => `<button data-d="${m.id}" class="${F.by === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
     $('depHint').textContent = F.by === 'all' ? t('everyoneHint', S.members.length) : '';
     $('fDep').querySelectorAll('button').forEach(b => b.onclick = () => { F.by = b.dataset.d; renderForm(); });
-    $('srcField').style.display = (mineMode && !isExp) ? 'none' : ((mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none');
+    $('xferField').style.display = isXfer ? '' : 'none';
+    if (isXfer) {
+      const pick = (box, cur, other, set) => {
+        $(box).innerHTML = S.members.map(m => `<button data-x="${m.id}" class="${cur === m.id ? 'on' : ''}">${dot(m)}${esc(m.name)}</button>`).join('');
+        $(box).querySelectorAll('button').forEach(b => b.onclick = () => { set(b.dataset.x); renderForm(); });
+      };
+      pick('fXFrom', F.xFrom, F.xTo, (v) => { if (F.xTo === v) F.xTo = F.xFrom; F.xFrom = v; });
+      pick('fXTo', F.xTo, F.xFrom, (v) => { if (F.xFrom === v) F.xFrom = F.xTo; F.xTo = v; });
+    }
+    $('srcField').style.display = isXfer ? 'none' : ((mineMode || !isExp || F.paidBy === 'fund') ? '' : 'none');
+    $('srcLbl').textContent = (mineMode && !isExp) ? t('srcInto') : t('srcLabel');
     $('fSrc').querySelectorAll('button').forEach(b => { b.classList.toggle('on', b.dataset.s === F.src); b.onclick = () => { F.src = b.dataset.s; renderForm(); }; });
     updateConv();
   }
@@ -1966,7 +2071,7 @@
       const me = {
         id: F.id || uid(), type: isIn ? 'deposit' : 'expense', cur: F.cur, orig, amount: Math.round(amount * 100) / 100,
         note: $('fNote').value.trim(), date: $('fDate').value || today(),
-        cat: F.cat, src: isIn ? 'cash' : (F.src === 'card' ? 'card' : 'cash'), own: true, ts: Date.now()
+        cat: F.cat, src: F.src === 'card' ? 'card' : 'cash', own: true, ts: Date.now()
       };
       S.lastSrcMine = me.src;
       S.mine = S.mine || [];
@@ -1974,6 +2079,18 @@
       if (j >= 0) { me.ts = S.mine[j].ts || me.ts; S.mine[j] = me; } else S.mine.push(me);
       save(); closeSheet(); renderAll();
       toast(j >= 0 ? t('edited') : isIn ? t('topupToast', money(amount)) : t('savedToast', money(amount)));
+      return;
+    }
+    if (F.type === 'transfer') {
+      if (!F.xFrom || !F.xTo || F.xFrom === F.xTo) { toast(t('xferNeed')); return; }
+      const x = {
+        id: F.id || uid(), type: 'transfer', cur: F.cur, orig, amount: Math.round(amount * 100) / 100,
+        note: $('fNote').value.trim(), date: $('fDate').value || today(), from: F.xFrom, to: F.xTo, ts: Date.now()
+      };
+      const k = S.entries.findIndex(y => y.id === x.id);
+      if (k >= 0) { x.ts = S.entries[k].ts || x.ts; S.entries[k] = x; } else S.entries.push(x);
+      save(); closeSheet(); renderAll();
+      toast(k >= 0 ? t('edited') : t('xferToast', mname(x.from), mname(x.to), money(amount)));
       return;
     }
     if (F.type === 'expense' && !F.split.length) { toast(t('needSplit')); return; }
@@ -2048,6 +2165,7 @@
     }
   }
   function entryLine(e) {
+    if (e.type === 'transfer') return `${money(amt(e))}${e.cur !== S.base ? ` (${moneyC(e.orig, e.cur)})` : ''} ${mname(e.from)} \u2192 ${mname(e.to)} ${t('sumXfer')}${e.note ? ' · ' + e.note : ''}`;
     return `${e.type === 'deposit' ? '+' : '−'}${money(amt(e))}${e.cur !== S.base ? ` (${moneyC(e.orig, e.cur)})` : ''} ${e.note || (e.type === 'deposit' ? t('depositDefault') : catName(CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1]))}${e.type === 'deposit' && member(e.by) ? ` — ${mname(e.by)}` : ''}${e.type === 'expense' && e.paidBy !== 'fund' ? ' ' + t('sumAdvanced', mname(e.paidBy)) : ''}${e.type === 'expense' && advBase(e) > 0 ? ' ' + t('sumAdvancedPart', mname(e.adv.by), money(advBase(e))) : ''}`;
   }
   // what each entry does to the fund — mirrors calc() exactly, so the days reconcile to the balance
@@ -2115,7 +2233,7 @@
       d.days.forEach(day => {
         h += `<div class="sp-day">${esc(day.label)}${day.spent > 0.005 ? ` <small>· ${esc(withState(shareState || S, () => t('sumDaySpent', money(day.spent))))}</small>` : ''}</div>`;
         h += `<div class="sp-bf"><span>${esc(t('sumBf'))}</span><span>${esc(mny(day.bf))}</span></div>`;
-        h += day.lines.map(l => `<div class="sp-line${l.charAt(0) === '+' ? ' in' : ' ex'}">${esc(l)}</div>`).join('');
+        h += day.lines.map(l => `<div class="sp-line${l.charAt(0) === '+' ? ' in' : l.charAt(0) === '−' ? ' ex' : ''}">${esc(l)}</div>`).join('');
         h += `<div class="sp-cf"><span>${esc(t('sumCf'))}</span><span>${esc(mny(day.cf))}</span></div>`;
       });
     }
@@ -2145,9 +2263,10 @@
       const base = S.base, trip = S.trip;
       const keep = shareDay ? S.entries.filter(e => e.date === shareDay) : S.entries;
       const rows = keep.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.ts || 0) - (b.ts || 0)).map(e => {
-        const dep = e.type === 'deposit';
+        const dep = e.type === 'deposit', xf = e.type === 'transfer';
         let det;
-        if (dep) { det = (e.note || t('depositDefault')) + (member(e.by) ? ' — ' + mname(e.by) : ''); }
+        if (xf) { det = `${mname(e.from)} \u2192 ${mname(e.to)}` + (e.note ? ': ' + e.note : '') + ' ' + t('sumXfer'); }
+        else if (dep) { det = (e.note || t('depositDefault')) + (member(e.by) ? ' — ' + mname(e.by) : ''); }
         else {
           const cat = CATS.find(c => c.id === e.cat) || CATS[CATS.length - 1];
           det = catName(cat) + (e.note ? ': ' + e.note : '');
@@ -2155,7 +2274,7 @@
           else if (advBase(e) > 0) det += ' ' + t('sumAdvancedPart', mname(e.adv.by), money(advBase(e)));
         }
         if (e.cur !== base) det += ' · ' + moneyC(e.orig, e.cur);
-        return { date: e.date, det: truncDet(det), amt: fmtA(amt(e)), dep, noFund: !dep && e.paidBy !== 'fund' };
+        return { date: e.date, det: truncDet(det), amt: fmtA(amt(e)), dep, xf, noFund: xf || (!dep && e.paidBy !== 'fund') };
       });
       const r2 = calc();
       const peopleRows = S.members.map(m => {
@@ -2188,7 +2307,7 @@
     const amtHead = `${t('amount')} (${data.base})`;
     let detW = tw(t('note'), thF), amtW = tw(amtHead, thF);
     data.rows.forEach(r => {
-      r.amtText = r.dep ? r.amt : `(${r.amt})`;
+      r.amtText = (r.dep || r.xf) ? r.amt : `(${r.amt})`;
       r.aw = tw(r.amtText, amtF);
       detW = Math.max(detW, tw(r.det, detF));
       amtW = Math.max(amtW, r.aw);
@@ -2266,7 +2385,7 @@
             const ty = y + 10;
             x.textAlign = 'left';
             x.font = detF; x.fillStyle = r.noFund ? C.muted : C.ink; x.fillText(r.det, P, ty);
-            x.font = amtF; x.fillStyle = r.dep ? C.inC : C.outC;
+            x.font = amtF; x.fillStyle = r.dep ? C.inC : r.xf ? C.muted : C.outC;
             if (r.noFund) x.globalAlpha = .6;
             x.fillText(r.amtText, X_AMT - r.aw, ty);
             x.globalAlpha = 1;
