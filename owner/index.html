@@ -496,6 +496,16 @@
   .seg button.on.xfer { color: var(--accent); }
   .entry.xfer .amt { color: var(--ink-2); }
   .entry.xfer .ic { background: var(--accent-soft); color: var(--accent); }
+  .hero .lbl { display: flex; align-items: center; gap: 8px; }
+  .hero .hero-chev { margin-left: auto; font-size: 19px; line-height: 1; font-weight: 400; opacity: .55; letter-spacing: 0; }
+  .hero .hero-shut { display: none; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.2); }
+  .hero.shut .hero-shut { display: inline-block; }
+  .hero { cursor: pointer; }
+  body.pp-member .hero .hero-chev { display: none; }
+  .closedbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; padding: 10px 8px 10px 14px; border-radius: 14px; background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; line-height: 1.35; }
+  .closedbar button { flex: 0 0 auto; border: 0; background: var(--surface); color: var(--accent); border-radius: 999px; padding: 7px 13px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  body.trip-closed .nav .in { grid-template-columns: 1fr 1fr 0 1fr 1fr; }
+  body.trip-closed #fab, body.trip-closed #selectBtn, body.trip-closed #mineSelectBtn, body.trip-closed .swipe-del { display: none !important; }
   .seg.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .seg.four button { padding: 9px 4px; font-size: 13px; }
   .rate-row { display: grid; grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: center; margin-top: 10px; font-weight: 500; }
@@ -597,8 +607,8 @@
     <button class="lang" id="langBtn" aria-label="Switch language"></button>
   </header>
 
-  <section class="hero" id="hero">
-    <div class="lbl"><span data-i="balance"></span></div>
+  <section class="hero" id="hero" role="button" tabindex="0">
+    <div class="lbl"><span data-i="balance"></span><span class="hero-shut" id="heroShut"></span><span class="hero-chev" aria-hidden="true">&#8250;</span></div>
     <div class="big num"><span id="balJPY">0</span> <small class="cc"></small></div>
     <div class="thb num">≈ <span id="balTHB">0</span> THB</div>
     <div class="bar"><i id="balBar"></i></div>
@@ -609,6 +619,7 @@
 
   <!-- ===== summary ===== -->
   <main id="v-sum" class="view on">
+    <div class="closedbar" id="closedBar" style="display:none"><span id="closedTxt"></span><button type="button" id="reopenBtn"></button></div>
     <div class="stats">
       <div class="stat out"><div class="k"><span data-i="spentAll"></span></div><div class="v num"><span id="spentAll">0</span> <small class="cc"></small></div><div class="s num">≈ <span id="spentAllTHB">0</span> THB</div></div>
       <div class="stat"><div class="k"><span data-i="perHead"></span></div><div class="v num"><span id="perHead">0</span> <small class="cc"></small></div><div class="s num">≈ <span id="perHeadTHB">0</span> THB</div></div>
@@ -736,7 +747,7 @@
       </div>
     </div>
     <p class="hint" style="margin:14px 4px 0" data-i="homeHint"></p>
-    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.12</p>
+    <p class="hint" style="margin:8px 4px 24px; opacity:.7" id="verLabel">PiePot Owner v1.14</p>
   </main>
 </div>
 
@@ -947,6 +958,16 @@
   </div>
 </div>
 
+<div class="sheet" id="endSheet" role="dialog" aria-modal="true">
+  <div class="grab"></div>
+  <h2 id="endTitle"></h2>
+  <p class="hint" id="endHint"></p>
+  <div class="actions">
+    <button class="btn ghost" id="endCancel" data-i="cancel"></button>
+    <button class="btn primary" id="endGo"></button>
+  </div>
+</div>
+
 <div class="sheet" id="walSheet" role="dialog" aria-modal="true">
   <div class="grab"></div>
   <h2 id="walTitleH"></h2>
@@ -1049,6 +1070,14 @@
       shareHint: 'ดึงสรุปยอดและรายการทั้งหมดแยกตามวัน ไว้ดูหรือคัดลอกส่งให้เพื่อนในแชต',
       shareSummary: 'ส่งต่อ', shareTitle: 'สรุปส่งเพื่อน', shareCopy: 'คัดลอกข้อความ', shareClose: 'ปิด',
       imgBtn: 'บันทึกเป็นรูป', imgInclPeople: 'ใส่ส่วนของแต่ละคนในรูป', imgHint: 'กดค้างที่รูปเพื่อบันทึกลงเครื่อง', imgShare: 'แชร์รูป', imgFail: 'สร้างรูปไม่สำเร็จ ลองใหม่อีกครั้ง',
+      closeTrip: 'ปิดทริป', reopenTrip: 'เปิดอีกครั้ง', closedPill: 'ปิดแล้ว',
+      closeTripHint: 'ปิดทริปเมื่อเคลียร์เงินกันเรียบร้อยแล้ว · รายการจะถูกล็อก เพิ่ม แก้ หรือลบไม่ได้ แต่ยังดูและแชร์สรุปได้ตามปกติ และเปิดอีกครั้งได้ทุกเมื่อ',
+      reopenHint: 'ทริปนี้ปิดอยู่ ถ้าต้องแก้ไขรายการให้เปิดอีกครั้งก่อน',
+      closedBar: (d) => `ปิดทริปแล้วเมื่อ ${d} · ดูได้อย่างเดียว`,
+      closedDone: 'ปิดทริปแล้ว · รายการถูกล็อกไว้',
+      reopenedDone: 'เปิดทริปอีกครั้งแล้ว · แก้ไขรายการได้',
+      closedToast: 'ทริปนี้ปิดอยู่ · กดเปิดอีกครั้งก่อนถ้าจะแก้ไข',
+      closedEmpty: 'ยังไม่มีรายการให้ปิด',
       newTrip: 'เริ่มทริปใหม่', newTripHint: 'ทริปปัจจุบันจะถูกเก็บเข้าประวัติการเดินทางโดยอัตโนมัติ ไม่หายไปไหน แล้วเริ่มรายการใหม่ว่าง ๆ (สมาชิก สกุลเงิน และอัตรายังอยู่ครบ)',
       newTripSheetHint: 'ทริปปัจจุบันจะถูกเก็บเข้าประวัติการเดินทาง แล้วเริ่มรายการใหม่ว่าง ๆ', newTripGo: 'เริ่มทริปใหม่', newTripDone: 'เริ่มทริปใหม่แล้ว ทริปเดิมอยู่ในประวัติการเดินทาง',
       history: 'ประวัติการเดินทาง', histEmpty: 'ยังไม่มีทริปที่ผ่านมา — เมื่อกด "เริ่มทริปใหม่" ทริปเดิมจะมาเก็บไว้ที่นี่ กดดูสรุปย้อนหลังได้',
@@ -1140,6 +1169,14 @@
       shareHint: 'Pull up the totals and a day-by-day list of everything, to review or copy into a chat',
       shareSummary: 'Share', shareTitle: 'Fund summary', shareCopy: 'Copy text', shareClose: 'Close',
       imgBtn: 'Save as image', imgInclPeople: 'Include Slice Status in the image', imgHint: 'Long-press the image to save it', imgShare: 'Share image', imgFail: "Couldn't create the image — try again",
+      closeTrip: 'Close trip', reopenTrip: 'Reopen', closedPill: 'Closed',
+      closeTripHint: 'Close the trip once everyone has settled up — entries are locked, so nothing can be added, edited or deleted. You can still view and share the summary, and reopen it any time',
+      reopenHint: 'This trip is closed. Reopen it first if you need to change an entry',
+      closedBar: (d) => `Closed on ${d} · view only`,
+      closedDone: 'Trip closed — entries are locked',
+      reopenedDone: 'Trip reopened — entries can be changed again',
+      closedToast: 'This trip is closed — reopen it first to make changes',
+      closedEmpty: 'Nothing to close yet',
       newTrip: 'New trip', newTripHint: 'The current trip is saved to Trip history automatically — nothing is lost — then you start fresh (members, currency and rates are kept)',
       newTripSheetHint: 'The current trip is saved to Trip history, then you start fresh', newTripGo: 'Start new trip', newTripDone: 'New trip started — the old one is in Trip history',
       history: 'Trip history', histEmpty: 'No past trips yet — when you tap "New trip", the old one is kept here. Tap any trip to see its summary',
@@ -1205,7 +1242,7 @@
     rates: { JPY: 23.0, HKD: 4.6, CNY: 5.0, USD: 36.0 }, cur: {}, // THB per 100 JPY, per 1 HKD/CNY/USD
     members: ['A', 'B'].map((n, i) => ({ id: 'm' + (i + 1), name: n, color: COLORS[i] })),
     entries: [],
-    mine: [], meId: null, myWallet: null,
+    mine: [], meId: null, myWallet: null, closedAt: null,
     tripCode: null
   });
   let S;
@@ -1235,6 +1272,7 @@
       o.myWallet = { cash: pot(o.myWallet.cash), card: pot(o.myWallet.card) };
       if (!o.myWallet.cash && !o.myWallet.card) o.myWallet = null;
     } else o.myWallet = null;
+    o.closedAt = (typeof o.closedAt === 'number' && o.closedAt > 0) ? o.closedAt : null;
     if (o.meId && !o.members.some(m => m.id === o.meId)) o.meId = null;
     if (!o.meId && o.members.length === 1) o.meId = o.members[0].id;
     delete o.rate;
@@ -1273,6 +1311,9 @@
   const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const uid = () => 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const member = (id) => S.members.find(m => m.id === id);
+  // a closed trip is read-only: nothing can be added, edited or deleted until it is reopened
+  const tripClosed = () => !!S.closedAt;
+  const isoOf = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const mname = (id) => id === 'fund' ? t('fund') : (member(id) ? member(id).name : '?');
   const niceDate = (iso) => { const [y, m, d] = iso.split('-').map(Number); return T.fmtDate(T.days[new Date(y, m - 1, d).getDay()], d, T.months[m - 1]); };
   const svgIcon = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg>`;
@@ -1352,6 +1393,13 @@
 
   // ---------- render ----------
   function renderAll() {
+    const shut = tripClosed();
+    document.body.classList.toggle('trip-closed', shut);
+    $('closedBar').style.display = shut ? 'flex' : 'none';
+    if (shut) $('closedTxt').textContent = t('closedBar', niceDate(isoOf(S.closedAt)));
+    $('reopenBtn').textContent = t('reopenTrip');
+    $('hero').classList.toggle('shut', shut);
+    $('heroShut').textContent = t('closedPill');
     const r = calc();
     $('tripName').textContent = S.trip || t('appName');
     $('rateShow').textContent = S.base === 'THB' ? 'THB' : `${(curDef(S.base) || {}).per || 1} ${S.base} = ${S.rates[S.base]} THB`;
@@ -1415,6 +1463,7 @@
   function closeSw() { if (swOpen) { const r = swOpen.querySelector('.entry'); if (r) r.style.transform = ''; swOpen.classList.remove('sw-open'); swOpen = null; } }
   function deleteEntries(ids) {
     if (window.__ppMember) { toast(t('shViewerToast')); return; }
+    if (tripClosed()) { toast(t('closedToast')); return; }
     const removed = [];
     S.entries = S.entries.filter(e => { if (ids.has(e.id)) { removed.push(e); return false; } return true; });
     if (!removed.length) return;
@@ -1502,7 +1551,7 @@
       openSheet(b.dataset.id);
     });
     $('entries').querySelectorAll('.swipe-del').forEach(d => d.onclick = () => { closeSw(); deleteEntries(new Set(d.dataset.del.split(','))); });
-    if (!selMode) $('entries').querySelectorAll('.swipe-wrap').forEach(bindSwipe);
+    if (!selMode && !tripClosed()) $('entries').querySelectorAll('.swipe-wrap').forEach(bindSwipe);
   }
   $('selectBtn').onclick = () => { selMode = !selMode; selIds.clear(); closeSw(); renderEntries(); };
   $('selDelete').onclick = () => {
@@ -1611,6 +1660,7 @@
   }
   function deleteMine(ids) {
     if (window.__ppMember) { toast(t('shViewerToast')); return; }
+    if (tripClosed()) { toast(t('closedToast')); return; }
     const removed = [];
     S.mine = (S.mine || []).filter(e => { if (ids.has(e.id)) { removed.push(e); return false; } return true; });
     if (!removed.length) return;
@@ -1642,7 +1692,7 @@
       openSheet(b.dataset.id, 'mine');
     });
     $('mineEntries').querySelectorAll('.swipe-del').forEach(d => d.onclick = () => { closeSw(); deleteMine(new Set(d.dataset.del.split(','))); });
-    if (!mineSel) $('mineEntries').querySelectorAll('.swipe-wrap').forEach(bindSwipe);
+    if (!mineSel && !tripClosed()) $('mineEntries').querySelectorAll('.swipe-wrap').forEach(bindSwipe);
   }
   $('mineSelectBtn').onclick = () => { mineSel = !mineSel; mineIds.clear(); closeSw(); renderMineList(); };
   $('mineSelDelete').onclick = () => {
@@ -1774,6 +1824,7 @@
   const F = { id: null, mode: 'fund', type: 'expense', cur: 'JPY', cat: 'food', paidBy: 'fund', split: [], by: null, advBy: null, advOrig: null, advManual: false };
   function openSheet(id, mode) {
     if (window.__ppMember) { toast(t('shViewerToast')); return; }
+    if (tripClosed()) { toast(t('closedToast')); return; }
     F.mode = mode === 'mine' ? 'mine' : 'fund';
     if (F.mode === 'mine') return openMineSheet(id);
     const e = id ? S.entries.find(x => x.id === id) : null;
@@ -1881,7 +1932,7 @@
   }
   function showSheet(id) { lockScroll(); $(id).scrollTop = 0; $('scrim').classList.add('on'); $(id).classList.add('on'); fitViewport(); }
 
-  function closeSheet() { unlockScroll(); $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); $('walSheet').classList.remove('on'); }
+  function closeSheet() { unlockScroll(); $('scrim').classList.remove('on'); $('sheet').classList.remove('on'); $('shareSheet').classList.remove('on'); $('newTripSheet').classList.remove('on'); $('curSheet').classList.remove('on'); $('walSheet').classList.remove('on'); $('endSheet').classList.remove('on'); }
 
   // ---------- money set aside for myself ----------
   let walCur = 'THB', walKind = 'cash';
@@ -1897,6 +1948,7 @@
   }
   function openWalSheet(kind) {
     if (window.__ppMember) { toast(t('shViewerToast')); return; }
+    if (tripClosed()) { toast(t('closedToast')); return; }
     walKind = kind === 'card' ? 'card' : 'cash';
     const pot = S.myWallet ? S.myWallet[walKind] : null;
     walCur = pot ? pot.cur : S.base;
@@ -2422,11 +2474,34 @@
 
   // ---------- new trip & history ----------
   const snapshot = () => ({ id: uid(), savedAt: Date.now(), state: JSON.parse(JSON.stringify(S)) });
+  // tapping the fund card is how a trip is closed, and reopened
+  function openEndSheet() {
+    if (window.__ppMember) return;
+    const shut = tripClosed();
+    $('endTitle').textContent = shut ? t('reopenTrip') : t('closeTrip');
+    $('endHint').textContent = shut ? t('reopenHint') : t('closeTripHint');
+    $('endGo').textContent = shut ? t('reopenTrip') : t('closeTrip');
+    showSheet('endSheet');
+  }
+  const reopenTrip = () => {
+    if (window.__ppMember) { toast(t('shViewerToast')); return; }
+    S.closedAt = null; save(); renderAll(); toast(t('reopenedDone'));
+  };
+  $('hero').onclick = openEndSheet;
+  $('hero').onkeydown = (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openEndSheet(); } };
+  $('endCancel').onclick = closeSheet;
+  $('endGo').onclick = () => {
+    if (tripClosed()) { closeSheet(); reopenTrip(); return; }
+    if (!S.entries.length && !(S.mine || []).length) { toast(t('closedEmpty')); return; }
+    S.closedAt = Date.now(); save(); closeSheet(); renderAll(); showView('sum');
+    toast(t('closedDone'), () => { S.closedAt = null; save(); renderAll(); });
+  };
+  $('reopenBtn').onclick = reopenTrip;
   $('newTripBtn').onclick = () => { $('ntName').value = ''; showSheet('newTripSheet'); };
   $('ntCancel').onclick = closeSheet;
   $('ntGo').onclick = () => {
     if (S.entries.length || (S.mine || []).length || (S.trip || '').trim()) { H.unshift(snapshot()); saveHist(); }
-    S = { ...S, trip: $('ntName').value.trim(), entries: [], mine: [], myWallet: null };
+    S = { ...S, trip: $('ntName').value.trim(), entries: [], mine: [], myWallet: null, closedAt: null };
     save(); closeSheet(); renderAll(); showView('sum'); toast(t('newTripDone'));
   };
   function renderHistory() {
